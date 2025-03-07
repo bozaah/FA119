@@ -1,0 +1,2049 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.4.545">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>trial_weaners</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="trial_weaners_files/libs/clipboard/clipboard.min.js"></script>
+<script src="trial_weaners_files/libs/quarto-html/quarto.js"></script>
+<script src="trial_weaners_files/libs/quarto-html/popper.min.js"></script>
+<script src="trial_weaners_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="trial_weaners_files/libs/quarto-html/anchor.min.js"></script>
+<link href="trial_weaners_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="trial_weaners_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="trial_weaners_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="trial_weaners_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="trial_weaners_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="fullcontent">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+
+
+
+<section id="ps-ear-temperature-classification---ml-approach" class="level1">
+<h1>3Ps Ear temperature classification - ML Approach</h1>
+<section id="health-observations-data" class="level2">
+<h2 class="anchored" data-anchor-id="health-observations-data">Health observations data</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>dt[, dmac <span class="sc">:</span><span class="er">=</span> <span class="fu">factor</span>(dmac)]</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>dt[, alert <span class="sc">:</span><span class="er">=</span> <span class="fu">factor</span>(alert)]</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>dt[, condition <span class="sc">:</span><span class="er">=</span> <span class="fu">factor</span>(condition)]</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>dt[, time <span class="sc">:</span><span class="er">=</span> <span class="fu">format</span>(time, <span class="st">"%H:%M:%S"</span>)]</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>dt[, pen_number <span class="sc">:</span><span class="er">=</span> <span class="fu">factor</span>(<span class="fu">round</span>(<span class="fu">as.numeric</span>(pen_number), <span class="dv">0</span>))]</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>dt[, date <span class="sc">:</span><span class="er">=</span> lubridate<span class="sc">::</span><span class="fu">ymd</span>(date, <span class="at">tz =</span> <span class="st">"Australia/Perth"</span>)]</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>dt[, time_stamp <span class="sc">:</span><span class="er">=</span> lubridate<span class="sc">::</span><span class="fu">ymd_hms</span>(<span class="fu">paste</span>(date, time), <span class="at">tz =</span> <span class="st">"Australia/Perth"</span>)]</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co"># logical columns to 0 or 1</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>dt[, (<span class="fu">names</span>(dt)) <span class="sc">:</span><span class="er">=</span> <span class="fu">lapply</span>(.SD, <span class="cf">function</span>(x) <span class="cf">if</span> (<span class="fu">is.logical</span>(x)) <span class="fu">as.integer</span>(x) <span class="cf">else</span> x)]</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Turn condition into 0 and 1 (healthy or sick/dead)</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>dt[, target <span class="sc">:</span><span class="er">=</span> <span class="fu">factor</span>(<span class="fu">ifelse</span>(<span class="fu">is.na</span>(condition), </span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>                             condition, </span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>                             <span class="fu">ifelse</span>(condition <span class="sc">%in%</span> <span class="st">"Healthy"</span>,</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>                                    <span class="dv">0</span>,</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>                                    <span class="dv">1</span>)))]</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a><span class="co"># one dmac 1A64 on 2024-10-28 10:28:30, was on NR3 and I moved it to NR1</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>dt[<span class="fu">which</span>(dt<span class="sc">$</span>room <span class="sc">==</span> <span class="st">"NR3"</span>), room <span class="sc">:</span><span class="er">=</span> <span class="st">"NR1"</span>]</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a><span class="co"># Filter rows with missing dmac ids</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>dt <span class="ot">&lt;-</span> dt[<span class="sc">!</span><span class="fu">is.na</span>(dmac)]</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>dt <span class="ot">&lt;-</span> dt[<span class="sc">!</span><span class="fu">is.na</span>(condition)]</span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>dt <span class="ot">&lt;-</span> dt[<span class="sc">!</span><span class="fu">is.na</span>(bcs)]</span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a><span class="co"># Clean and convert bcs to numeric</span></span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>dt[, bcs <span class="sc">:</span><span class="er">=</span> <span class="fu">as.numeric</span>(<span class="fu">gsub</span>(<span class="st">"</span><span class="sc">\\</span><span class="st">.+"</span>, <span class="st">"."</span>, bcs))] <span class="co"># Removes extra dots, then converts to numeric</span></span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a><span class="co"># Convert any NAs introduced by the gsub to 0.5</span></span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>dt[<span class="fu">is.na</span>(bcs), bcs <span class="sc">:</span><span class="er">=</span> <span class="fl">0.5</span>]</span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a><span class="co"># Convert bcs to ordered factor</span></span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a>dt[, bcs <span class="sc">:</span><span class="er">=</span> <span class="fu">factor</span>(bcs, <span class="at">levels =</span> <span class="fu">sort</span>(<span class="fu">unique</span>(bcs)), <span class="at">ordered =</span> <span class="cn">TRUE</span>)]</span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a>bcs_counts <span class="ot">&lt;-</span> dt[, .(<span class="at">bcs_count =</span> .N), by <span class="ot">=</span> .(bcs)]</span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a><span class="co"># Merge the counts back into the original data</span></span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a>dt <span class="ot">&lt;-</span> <span class="fu">merge</span>(dt, bcs_counts, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"bcs"</span>), <span class="at">all.x =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a><span class="co"># Remove duplicates</span></span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a>dt <span class="ot">&lt;-</span> dt[<span class="sc">!</span><span class="fu">duplicated</span>(dt)]</span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a><span class="co"># Ensure data is sorted by dmac and timestamp for accurate cumulative calculations</span></span>
+<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a><span class="fu">setorder</span>(dt, time_stamp, dmac)</span>
+<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a><span class="co"># Extract dates with the temperature data in mind.</span></span>
+<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a>unique_dates <span class="ot">&lt;-</span> dt <span class="sc">|&gt;</span> dplyr<span class="sc">::</span><span class="fu">pull</span>(time_stamp)</span>
+<span id="cb1-48"><a href="#cb1-48" aria-hidden="true" tabindex="-1"></a>unique_dmac <span class="ot">&lt;-</span> dt <span class="sc">|&gt;</span> dplyr<span class="sc">::</span><span class="fu">pull</span>(dmac)</span>
+<span id="cb1-49"><a href="#cb1-49" aria-hidden="true" tabindex="-1"></a>unique_ids_dates <span class="ot">&lt;-</span> <span class="fu">data.table</span>(<span class="at">dmac =</span> unique_dmac, <span class="at">time_stamp =</span> unique_dates)</span>
+<span id="cb1-50"><a href="#cb1-50" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-51"><a href="#cb1-51" aria-hidden="true" tabindex="-1"></a><span class="co"># start and end info</span></span>
+<span id="cb1-52"><a href="#cb1-52" aria-hidden="true" tabindex="-1"></a>date_start <span class="ot">&lt;-</span> <span class="fu">min</span>(dt<span class="sc">$</span>time_stamp)</span>
+<span id="cb1-53"><a href="#cb1-53" aria-hidden="true" tabindex="-1"></a>date_end <span class="ot">&lt;-</span> <span class="fu">max</span>(dt<span class="sc">$</span>time_stamp)</span>
+<span id="cb1-54"><a href="#cb1-54" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-55"><a href="#cb1-55" aria-hidden="true" tabindex="-1"></a><span class="co"># Check RED alerts data</span></span>
+<span id="cb1-56"><a href="#cb1-56" aria-hidden="true" tabindex="-1"></a><span class="co"># dt[grep("^RED", dt$alert)]</span></span>
+<span id="cb1-57"><a href="#cb1-57" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-58"><a href="#cb1-58" aria-hidden="true" tabindex="-1"></a><span class="do">## Cummulative alerts</span></span>
+<span id="cb1-59"><a href="#cb1-59" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a binary column indicating the presence of an alert</span></span>
+<span id="cb1-60"><a href="#cb1-60" aria-hidden="true" tabindex="-1"></a>dt[, alert_flag <span class="sc">:</span><span class="er">=</span> <span class="fu">as.integer</span>(<span class="sc">!</span><span class="fu">is.na</span>(alert) <span class="sc">&amp;</span> alert <span class="sc">%notin%</span> <span class="fu">c</span>(<span class="st">"None"</span>, <span class="st">"&lt;NA&gt;"</span>))]</span>
+<span id="cb1-61"><a href="#cb1-61" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-62"><a href="#cb1-62" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate cumulative alerts for each dmac ID over time</span></span>
+<span id="cb1-63"><a href="#cb1-63" aria-hidden="true" tabindex="-1"></a>dt[, cumulative_alerts <span class="sc">:</span><span class="er">=</span> <span class="fu">cumsum</span>(alert_flag), by <span class="ot">=</span> dmac]</span>
+<span id="cb1-64"><a href="#cb1-64" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-65"><a href="#cb1-65" aria-hidden="true" tabindex="-1"></a><span class="co"># Check data</span></span>
+<span id="cb1-66"><a href="#cb1-66" aria-hidden="true" tabindex="-1"></a><span class="fu">str</span>(dt)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Classes 'data.table' and 'data.frame':  962 obs. of  45 variables:
+ $ bcs                  : Ord.factor w/ 10 levels "0.5"&lt;"1"&lt;"1.5"&lt;..: 3 3 8 5 5 6 6 5 4 7 ...
+ $ date                 : POSIXct, format: "2024-10-07" "2024-10-07" ...
+ $ time                 : chr  "10:10:17" "10:15:39" "10:19:01" "10:22:53" ...
+ $ room                 : chr  "NR1" "NR1" "NR1" "NR1" ...
+ $ pen_number           : Factor w/ 28 levels "0","1","2","3",..: NA 23 3 25 10 17 10 10 13 13 ...
+ $ dmac                 : Factor w/ 616 levels "0.00E+00","01F6",..: 197 123 603 465 302 85 116 354 440 551 ...
+ $ alert                : Factor w/ 5 levels "AMBER High Temp",..: NA NA NA 3 NA NA NA 3 3 3 ...
+ $ condition            : Factor w/ 3 levels "Dead","Healthy",..: 1 3 2 3 3 2 2 3 3 3 ...
+ $ rectal_temp          : int  NA NA NA NA NA NA NA NA NA NA ...
+ $ diarrhoea            : num  0 0 0 0 0 0 0 0 0 3 ...
+ $ respiratory          : num  0 0 0 2 0 0 0 1 0 0 ...
+ $ coughing             : num  0 0 0 2 0 0 0 2 0 0 ...
+ $ neuro                : num  0 0 0 0 0 0 0 0 0 0 ...
+ $ ataxia               : num  0 0 0 0 0 0 0 0 0 0 ...
+ $ paddling             : num  0 0 0 0 0 0 0 0 0 0 ...
+ $ seizure              : int  0 0 0 0 0 0 0 0 0 0 ...
+ $ nasal_disc           : num  0 0 0 2 0 0 0 0 0 1 ...
+ $ lameness             : num  0 0 0 0 2 0 0 0 0 0 ...
+ $ number_swollen_joints: num  0 0 0 0 0 0 0 0 0 0 ...
+ $ left_front           : int  0 0 0 0 0 0 0 0 0 0 ...
+ $ right_front          : int  0 0 0 0 1 0 0 0 0 0 ...
+ $ left_hind            : int  0 0 0 0 0 0 0 0 0 0 ...
+ $ right_hind           : int  0 0 0 0 0 0 0 0 0 0 ...
+ $ skin_lesion          : num  0 0 0 0 0 0 0 0 0 0 ...
+ $ tail_bite            : num  0 0 0 0 0 0 0 0 0 0 ...
+ $ abscess              : int  0 0 0 0 0 0 0 0 0 0 ...
+ $ prolapse             : int  0 0 0 0 0 0 0 0 0 0 ...
+ $ hernia               : int  0 1 0 0 0 0 0 0 0 0 ...
+ $ bloating             : int  0 0 0 0 0 0 0 0 0 0 ...
+ $ hema_left            : int  0 0 0 0 0 0 0 0 0 0 ...
+ $ hema_right           : int  0 0 0 0 0 0 0 0 0 0 ...
+ $ treated_prev         : num  0 1 0 0 0 0 0 0 0 0 ...
+ $ med1                 : int  0 1 0 0 0 0 0 0 1 1 ...
+ $ med2                 : int  0 0 0 0 0 0 0 0 0 0 ...
+ $ med3                 : int  0 0 0 0 0 0 0 0 0 0 ...
+ $ tosick               : int  0 0 0 0 0 0 0 0 0 0 ...
+ $ fromsick             : int  0 0 0 0 0 0 0 0 0 0 ...
+ $ euthanise            : int  0 0 0 0 0 0 0 0 0 0 ...
+ $ user_name            : chr  "ob" "ob" "ob" "ob" ...
+ $ comment              : chr  NA "head down bullied" NA NA ...
+ $ time_stamp           : POSIXct, format: "2024-10-07 10:10:17" "2024-10-07 10:15:39" ...
+ $ target               : Factor w/ 2 levels "0","1": 2 2 1 2 2 1 1 2 2 2 ...
+ $ bcs_count            : int  136 136 80 139 139 243 243 139 209 110 ...
+ $ alert_flag           : int  0 0 0 0 0 0 0 0 0 0 ...
+ $ cumulative_alerts    : int  0 0 0 0 0 0 0 0 0 0 ...
+ - attr(*, ".internal.selfref")=&lt;externalptr&gt; </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Hmisc::describe(dt)</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Step 2: Ensure condition is a factor and in the right order</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>health_dt <span class="ot">&lt;-</span> dt[, condition <span class="sc">:</span><span class="er">=</span> <span class="fu">factor</span>(condition, <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">"Healthy"</span>, <span class="st">"Sick"</span>, <span class="st">"Dead"</span>))]</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Step 3: Define health indicator columns, adding `bcs`</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>health_columns <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"diarrhoea"</span>, <span class="st">"respiratory"</span>, <span class="st">"coughing"</span>, <span class="st">"neuro"</span>, <span class="st">"ataxia"</span>, </span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"paddling"</span>, <span class="st">"seizure"</span>, <span class="st">"nasal_disc"</span>, <span class="st">"lameness"</span>, </span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"number_swollen_joints"</span>, <span class="st">"left_front"</span>, <span class="st">"right_front"</span>, </span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"left_hind"</span>, <span class="st">"right_hind"</span>, <span class="st">"skin_lesion"</span>, <span class="st">"tail_bite"</span>,</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"abscess"</span>, <span class="st">"prolapse"</span>, <span class="st">"hernia"</span>, <span class="st">"bloating"</span>, </span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"hema_left"</span>, <span class="st">"hema_right"</span>, <span class="st">"treated_prev"</span>,</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"med1"</span>, <span class="st">"med2"</span>, <span class="st">"med3"</span>, <span class="st">"tosick"</span>, <span class="st">"fromsick"</span>, <span class="st">"euthanise"</span>, <span class="st">"cumulative_alerts"</span>)</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="co"># Ensure all health_columns are numeric</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>health_dt[, (health_columns) <span class="sc">:</span><span class="er">=</span> <span class="fu">lapply</span>(.SD, as.numeric), .SDcols <span class="ot">=</span> health_columns]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>The health observation is data between 2024-10-07 10:10:17 and 2024-11-29 12:27:23.</p>
+</section>
+<section id="ear-temperature-data" class="level2">
+<h2 class="anchored" data-anchor-id="ear-temperature-data">Ear temperature data</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="do">## Load in temperature data from python extraction and analysis ----</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="co"># List all .parquet files in the directory</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>parquet_files <span class="ot">&lt;-</span> <span class="fu">list.files</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data/trial_data_chunked"</span>), <span class="at">pattern =</span> <span class="st">"</span><span class="sc">\\</span><span class="st">.parquet$"</span>, <span class="at">full.names =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Read each file into a data.table and store in a list</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>dt_list <span class="ot">&lt;-</span> <span class="fu">lapply</span>(parquet_files, <span class="cf">function</span>(file) {</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  arrow<span class="sc">::</span><span class="fu">read_parquet</span>(file)</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Combine all data.tables into one</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>combined_dt <span class="ot">&lt;-</span> <span class="fu">rbindlist</span>(dt_list, <span class="at">use.names =</span> <span class="cn">TRUE</span>, <span class="at">fill =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="co"># View the combined data.table</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(combined_dt)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>           animal_id temperature           timestamp
+              &lt;char&gt;       &lt;num&gt;              &lt;POSc&gt;
+     1: C0B54C068B81       35.71 2024-10-04 03:45:00
+     2: C1BF84C88B2A       32.28 2024-10-04 03:45:00
+     3: C3175949AE6E       35.31 2024-10-04 03:45:00
+     4: C6C3F9C79F0A       37.87 2024-10-04 03:45:00
+     5: C82D27E4F92B       36.42 2024-10-04 03:45:00
+    ---                                             
+892213: EF4807D5C019       35.76 2024-10-29 15:50:00
+892214: F0C198CD1B95       37.24 2024-10-29 15:50:00
+892215: F42D594031B0       36.30 2024-10-29 15:50:00
+892216: F7326905FEEE       36.12 2024-10-29 15:50:00
+892217: F823C79EA646       37.83 2024-10-29 15:50:00</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Add date and time columns</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>combined_dt[, date <span class="sc">:</span><span class="er">=</span> lubridate<span class="sc">::</span><span class="fu">as_date</span>(timestamp)]</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>combined_dt[, time <span class="sc">:</span><span class="er">=</span> <span class="fu">format</span>(timestamp, <span class="st">"%H:%M:%S"</span>)]</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>combined_dt[, doy <span class="sc">:</span><span class="er">=</span> lubridate<span class="sc">::</span><span class="fu">yday</span>(date)]</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>combined_dt[, week <span class="sc">:</span><span class="er">=</span> lubridate<span class="sc">::</span><span class="fu">week</span>(date)]</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="co"># extract last 4 digits to match dmac on focus health obs</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>combined_dt[, dmac <span class="sc">:</span><span class="er">=</span> <span class="fu">factor</span>(<span class="fu">substring</span>(animal_id, <span class="fu">nchar</span>(animal_id) <span class="sc">-</span> <span class="dv">3</span>, <span class="fu">nchar</span>(animal_id)))]</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Count the number of observations per animal_id</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>observation_counts <span class="ot">&lt;-</span> combined_dt[, .N, by <span class="ot">=</span> dmac]</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Rename the count column for clarity</span></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a><span class="fu">setnames</span>(observation_counts, <span class="st">"N"</span>, <span class="st">"observation_count"</span>)</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a><span class="co"># View the result</span></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(observation_counts)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>       dmac observation_count
+     &lt;fctr&gt;             &lt;int&gt;
+  1:   8B81              3545
+  2:   8B2A              3633
+  3:   AE6E              3649
+  4:   9F0A              3628
+  5:   F92B              3653
+ ---                         
+262:   31B0              3646
+263:   FEEE              3614
+264:   A646              3581
+265:   5FAF              2460
+266:   E298              1823</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># plot</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="fu">setorder</span>(observation_counts, <span class="sc">-</span>observation_count) <span class="co"># Descending order</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Convert animal_id to a factor with levels ordered by observation_count</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>observation_counts[, dmac <span class="sc">:</span><span class="er">=</span> <span class="fu">factor</span>(dmac, <span class="at">levels =</span> dmac)]</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot using ggplot2</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>p1 <span class="ot">&lt;-</span> </span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">subset</span>(observation_counts, observation_count <span class="sc">&lt;=</span> <span class="dv">2800</span>), <span class="fu">aes</span>(<span class="at">x =</span> dmac, <span class="at">y =</span> observation_count)) <span class="sc">+</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_col</span>(<span class="at">fill =</span> <span class="st">"grey"</span>, <span class="at">alpha =</span> <span class="fl">0.4</span>) <span class="sc">+</span></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_flip</span>() <span class="sc">+</span></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_light</span>(<span class="at">base_size =</span> <span class="dv">12</span>) <span class="sc">+</span></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">name =</span> <span class="st">""</span>) <span class="co"># Optional, remove legend title </span></span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>p2 <span class="ot">&lt;-</span></span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">subset</span>(observation_counts, observation_count <span class="sc">&gt;=</span> <span class="dv">3650</span>), <span class="fu">aes</span>(<span class="at">x =</span> dmac, <span class="at">y =</span> observation_count)) <span class="sc">+</span></span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_col</span>(<span class="at">fill =</span> <span class="st">"grey"</span>, <span class="at">alpha =</span> <span class="fl">0.4</span>) <span class="sc">+</span></span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_flip</span>() <span class="sc">+</span></span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_light</span>(<span class="at">base_size =</span> <span class="dv">12</span>) <span class="sc">+</span></span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">name =</span> <span class="st">""</span>) <span class="co"># Optional, remove legend title</span></span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>p1 <span class="sc">|</span> p2</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="trial_weaners_files/figure-html/ear_temp-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Extract dmac with &gt;= 3650</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>max_obs_tags <span class="ot">&lt;-</span> <span class="fu">as.character</span>(dplyr<span class="sc">::</span><span class="fu">pull</span>(<span class="fu">subset</span>(observation_counts, observation_count <span class="sc">&gt;=</span> <span class="dv">4000</span>), dmac))</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Check one tag</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(<span class="fu">subset</span>(combined_dt, dmac <span class="sc">%in%</span> max_obs_tags), <span class="fu">aes</span>(<span class="at">x =</span> timestamp, <span class="at">y =</span> temperature)) <span class="sc">+</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>() <span class="sc">+</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(. <span class="sc">~</span> dmac) <span class="sc">+</span> </span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_light</span>(<span class="at">base_size =</span> <span class="dv">16</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="trial_weaners_files/figure-html/ear_temp-2.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="create-temperature-features" class="level2">
+<h2 class="anchored" data-anchor-id="create-temperature-features">Create temperature features</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Create features for</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>feature_file_path <span class="ot">&lt;-</span> here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data/trial_3Ps_tag_temp_with_features.parquet"</span>)</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="fu">file.exists</span>(feature_file_path)) {</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">print</span>(<span class="st">"feature dataset exists."</span>)</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>  features_dt <span class="ot">&lt;-</span> arrow<span class="sc">::</span><span class="fu">read_parquet</span>(feature_file_path)</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>} <span class="cf">else</span> {</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">print</span>(<span class="st">"Creating features dataset."</span>)</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>  features_dt <span class="ot">&lt;-</span> <span class="fu">create_features</span>(combined_dt)</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "feature dataset exists."</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Save current par settings</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>original_par <span class="ot">&lt;-</span> <span class="fu">par</span>()</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Adjust margins to create space for the legend outside the plotting area</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mar =</span> <span class="fu">c</span>(<span class="dv">5</span>, <span class="dv">4</span>, <span class="dv">4</span>, <span class="dv">8</span>)) <span class="co"># Increase the right margin to accommodate the legend</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="fu">with</span>(<span class="fu">subset</span>(features_dt, animal_id <span class="sc">==</span> <span class="st">"FFDB460D9AD5"</span> <span class="sc">&amp;</span> doy <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">278</span><span class="sc">:</span><span class="dv">290</span>)),</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>     <span class="fu">plot</span>(temperature <span class="sc">~</span> timestamp, <span class="at">type =</span> <span class="st">"l"</span>, <span class="at">col =</span> <span class="st">"grey"</span>, <span class="at">lwd =</span> <span class="fl">1.6</span>, <span class="at">xlab =</span> <span class="st">""</span>, <span class="at">ylab =</span> <span class="st">"</span><span class="sc">\n</span><span class="st">Tag temperature (ºC)"</span>))</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a><span class="fu">with</span>(<span class="fu">subset</span>(features_dt, animal_id <span class="sc">==</span> <span class="st">"FFDB460D9AD5"</span> <span class="sc">&amp;</span> doy <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">278</span><span class="sc">:</span><span class="dv">290</span>)),</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>     <span class="fu">lines</span>(Rolling_Avg_3h <span class="sc">~</span> timestamp, <span class="at">col =</span> <span class="st">"orange"</span>, <span class="at">lwd =</span> <span class="dv">4</span>))</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a><span class="fu">with</span>(<span class="fu">subset</span>(features_dt, animal_id <span class="sc">==</span> <span class="st">"FFDB460D9AD5"</span> <span class="sc">&amp;</span> doy <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">278</span><span class="sc">:</span><span class="dv">290</span>)),</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>     <span class="fu">lines</span>(Rolling_Avg_6h <span class="sc">~</span> timestamp, <span class="at">col =</span> <span class="st">"forestgreen"</span>, <span class="at">lwd =</span> <span class="dv">4</span>))</span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a><span class="fu">with</span>(<span class="fu">subset</span>(features_dt, animal_id <span class="sc">==</span> <span class="st">"FFDB460D9AD5"</span> <span class="sc">&amp;</span> doy <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">278</span><span class="sc">:</span><span class="dv">290</span>)),</span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>     <span class="fu">lines</span>(Rolling_Avg_12h <span class="sc">~</span> timestamp, <span class="at">col =</span> <span class="st">"darkblue"</span>, <span class="at">lwd =</span> <span class="dv">4</span>))</span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a><span class="fu">with</span>(<span class="fu">subset</span>(features_dt, animal_id <span class="sc">==</span> <span class="st">"FFDB460D9AD5"</span> <span class="sc">&amp;</span> doy <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">278</span><span class="sc">:</span><span class="dv">290</span>)),</span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>     <span class="fu">lines</span>(Rolling_Avg_24h <span class="sc">~</span> timestamp, <span class="at">col =</span> <span class="st">"steelblue"</span>, <span class="at">lwd =</span> <span class="dv">4</span>))</span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a><span class="fu">with</span>(<span class="fu">subset</span>(features_dt, animal_id <span class="sc">==</span> <span class="st">"FFDB460D9AD5"</span> <span class="sc">&amp;</span> doy <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">278</span><span class="sc">:</span><span class="dv">290</span>)),</span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a>     <span class="fu">lines</span>(Rolling_Avg_30h <span class="sc">~</span> timestamp, <span class="at">col =</span> <span class="st">"purple2"</span>, <span class="at">lwd =</span> <span class="dv">4</span>))</span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a><span class="fu">with</span>(<span class="fu">subset</span>(features_dt, animal_id <span class="sc">==</span> <span class="st">"FFDB460D9AD5"</span> <span class="sc">&amp;</span> doy <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">278</span><span class="sc">:</span><span class="dv">290</span>)),</span>
+<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a>     <span class="fu">lines</span>(Rolling_Avg_48h <span class="sc">~</span> timestamp, <span class="at">col =</span> <span class="st">"firebrick"</span>, <span class="at">lwd =</span> <span class="dv">4</span>))</span>
+<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a><span class="fu">title</span>(<span class="st">"Ear tag temperature (dmac 9AD5)"</span>)</span>
+<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a><span class="co"># Add the legend outside the plot</span></span>
+<span id="cb12-23"><a href="#cb12-23" aria-hidden="true" tabindex="-1"></a><span class="fu">legend</span>(<span class="st">"topright"</span>, <span class="at">inset =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">0.18</span>, <span class="dv">0</span>), <span class="at">legend =</span> <span class="fu">c</span>(<span class="st">"Obs"</span>, <span class="st">"3h"</span>, <span class="st">"6h"</span>, <span class="st">"12h"</span>, <span class="st">"24h"</span>, <span class="st">"30h"</span>, <span class="st">"48h"</span>),</span>
+<span id="cb12-24"><a href="#cb12-24" aria-hidden="true" tabindex="-1"></a>       <span class="at">col =</span> <span class="fu">c</span>(<span class="st">"grey"</span>, <span class="st">"orange"</span>, <span class="st">"forestgreen"</span>, <span class="st">"darkblue"</span>, <span class="st">"steelblue"</span>, <span class="st">"purple2"</span>, <span class="st">"firebrick"</span>), </span>
+<span id="cb12-25"><a href="#cb12-25" aria-hidden="true" tabindex="-1"></a>       <span class="at">lwd =</span> <span class="fu">rep</span>(<span class="dv">4</span>, <span class="dv">7</span>), <span class="at">xpd =</span> <span class="cn">TRUE</span>, <span class="at">title =</span> <span class="st">"Rolling mean"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="trial_weaners_files/figure-html/features-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Restore original par settings</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(original_par)</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Apply the feature calculation to each animal</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>features_daily <span class="ot">&lt;-</span> combined_dt[, <span class="fu">calculate_features</span>(.SD), by <span class="ot">=</span> .(animal_id, doy)]</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>features_weeky <span class="ot">&lt;-</span> combined_dt[, <span class="fu">calculate_features</span>(.SD), by <span class="ot">=</span> .(animal_id, week)]</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>features_daily[, sd_group <span class="sc">:</span><span class="er">=</span> <span class="fu">ifelse</span>(sd_temp <span class="sc">&gt;=</span> <span class="fl">0.8</span>, <span class="st">"high SD"</span>, <span class="st">"low SD"</span>)]</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>features_weeky[, sd_group <span class="sc">:</span><span class="er">=</span> <span class="fu">ifelse</span>(sd_temp <span class="sc">&gt;=</span> <span class="fl">0.8</span>, <span class="st">"high SD"</span>, <span class="st">"low SD"</span>)]</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(<span class="fu">na.omit</span>(features_daily), <span class="fu">aes</span>(<span class="at">x =</span> sd_temp, <span class="at">fill =</span> sd_group), <span class="at">group =</span> sd_group) <span class="sc">+</span></span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_viridis_d</span>(<span class="at">option =</span> <span class="st">"D"</span>, <span class="at">name =</span> <span class="st">"Rolling mean"</span>) <span class="sc">+</span></span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Ear tag temperature distribution (daily summary)"</span>,</span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"</span><span class="sc">\n</span><span class="st">Temperature (ºC)"</span>,</span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Density</span><span class="sc">\n</span><span class="st">"</span></span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_density</span>(<span class="at">alpha =</span> .<span class="dv">65</span>) <span class="sc">+</span></span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_light</span>(<span class="at">base_size =</span> <span class="dv">16</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="trial_weaners_files/figure-html/features-2.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a group for high and low SS (only towards the end)</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>high_sd_tags <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">pull</span>(<span class="fu">subset</span>(features_daily, sd_group <span class="sc">==</span> <span class="st">"high SD"</span>), animal_id) <span class="sc">|&gt;</span> <span class="fu">unique</span>()</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>low_sd_tags <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">pull</span>(<span class="fu">subset</span>(features_daily, sd_group <span class="sc">==</span> <span class="st">"low SD"</span>), animal_id) <span class="sc">|&gt;</span> <span class="fu">unique</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="time-series-analysis" class="level2">
+<h2 class="anchored" data-anchor-id="time-series-analysis">Time-series analysis</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co"># anomaly</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>results <span class="ot">&lt;-</span> features_dt <span class="sc">|&gt;</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">group_by</span>(animal_id) <span class="sc">|&gt;</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">time_decompose</span>(temperature, <span class="at">method =</span> <span class="st">"stl"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">anomalize</span>(remainder) <span class="sc">|&gt;</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">time_recompose</span>() <span class="sc">|&gt;</span></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as.data.table</span>()</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Add date and extract dmac from IDs</span></span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>results[, date <span class="sc">:</span><span class="er">=</span> lubridate<span class="sc">::</span><span class="fu">as_date</span>(timestamp)]</span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>results[, dmac <span class="sc">:</span><span class="er">=</span> <span class="fu">factor</span>(<span class="fu">substring</span>(animal_id, <span class="fu">nchar</span>(animal_id) <span class="sc">-</span> <span class="dv">3</span>, <span class="fu">nchar</span>(animal_id)))]</span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a><span class="co"># str(results)</span></span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(<span class="fu">ts</span>(results[animal_id <span class="sc">==</span> <span class="fu">sample</span>(high_sd_tags, <span class="dv">1</span>), .(observed, season, trend, remainder)]), </span>
+<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a>     <span class="at">main =</span> <span class="st">"TS decomposition"</span>, <span class="at">cex.lab =</span> <span class="fl">1.3</span>, <span class="at">cex.axis =</span> <span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="trial_weaners_files/figure-html/ts_analysis-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(<span class="fu">ts</span>(results[animal_id <span class="sc">==</span> <span class="fu">sample</span>(low_sd_tags, <span class="dv">1</span>), .(observed, season, trend, remainder)]), </span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>     <span class="at">main =</span> <span class="st">"TS decomposition"</span>, <span class="at">cex.lab =</span> <span class="fl">1.3</span>, <span class="at">cex.axis =</span> <span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="trial_weaners_files/figure-html/ts_analysis-2.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Create feature with ts series output</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>results_ts_features <span class="ot">&lt;-</span> <span class="fu">create_features_ts</span>(results)</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(results_ts_features, <span class="fu">aes</span>(<span class="at">x =</span> remainder), <span class="at">group =</span> anomaly) <span class="sc">+</span></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_density</span>(<span class="fu">aes</span>(<span class="at">fill =</span> anomaly), <span class="at">alpha =</span> <span class="fl">0.4</span>) <span class="sc">+</span></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_viridis_d</span>(<span class="at">option =</span> <span class="st">"D"</span>, <span class="at">name =</span> <span class="st">"Anomaly"</span>) <span class="sc">+</span></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_light</span>(<span class="at">base_size =</span> <span class="dv">16</span>) <span class="sc">+</span></span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"10-min Temperature Pattern "</span>, <span class="at">y =</span> <span class="st">"Density"</span>, <span class="at">x =</span> <span class="st">"TS Remainder"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="trial_weaners_files/figure-html/ts_analysis-3.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(results_ts_features, <span class="fu">aes</span>(<span class="at">x =</span> season), <span class="at">group =</span> anomaly) <span class="sc">+</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_density</span>(<span class="fu">aes</span>(<span class="at">fill =</span> anomaly), <span class="at">alpha =</span> <span class="fl">0.4</span>) <span class="sc">+</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_viridis_d</span>(<span class="at">option =</span> <span class="st">"D"</span>, <span class="at">name =</span> <span class="st">"Anomaly"</span>) <span class="sc">+</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_light</span>(<span class="at">base_size =</span> <span class="dv">16</span>) <span class="sc">+</span></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"10-min Temperature Pattern "</span>, <span class="at">y =</span> <span class="st">"Density"</span>, <span class="at">x =</span> <span class="st">"TS Seasonality"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="trial_weaners_files/figure-html/ts_analysis-4.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(results_ts_features, <span class="fu">aes</span>(<span class="at">x =</span> trend), <span class="at">group =</span> anomaly) <span class="sc">+</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_density</span>(<span class="fu">aes</span>(<span class="at">fill =</span> anomaly), <span class="at">alpha =</span> <span class="fl">0.4</span>) <span class="sc">+</span></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_viridis_d</span>(<span class="at">option =</span> <span class="st">"D"</span>, <span class="at">name =</span> <span class="st">"Anomaly"</span>) <span class="sc">+</span></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_light</span>(<span class="at">base_size =</span> <span class="dv">16</span>) <span class="sc">+</span></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"10-min Temperature Pattern "</span>, <span class="at">y =</span> <span class="st">"Density"</span>, <span class="at">x =</span> <span class="st">"TS Trend"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="trial_weaners_files/figure-html/ts_analysis-5.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="co"># arrow::write_parquet(results_ts_features, "data/trial_3Ps_timeseries_anomaly_features_data.parquet")</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="combined-health-observation-data-with-ear-tag-temperature-data" class="level2">
+<h2 class="anchored" data-anchor-id="combined-health-observation-data-with-ear-tag-temperature-data">Combined health observation data with ear tag temperature data</h2>
+<div class="cell">
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in dplyr::left_join(results_ts_features, health_dt_subset, by = c("dmac", : Detected an unexpected many-to-many relationship between `x` and `y`.
+ℹ Row 13677 of `x` matches multiple rows in `y`.
+ℹ Row 171 of `y` matches multiple rows in `x`.
+ℹ If a many-to-many relationship is expected, set `relationship =
+  "many-to-many"` to silence this warning.</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="trial_weaners_files/figure-html/data_merge-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Classes 'data.table' and 'data.frame':  59327 obs. of  62 variables:
+ $ animal_id        : chr  "C013B0A7736E" "C013B0A7736E" "C013B0A7736E" "C013B0A7736E" ...
+ $ timestamp        : POSIXct, format: "2024-10-14 00:00:00" "2024-10-14 00:10:00" ...
+ $ observed         : num  27.3 26.5 26.6 26.8 27 ...
+ $ season           : num  -1.966 -1.617 -1.329 -1.705 -0.178 ...
+ $ trend            : num  28.1 28 28 27.9 27.8 ...
+ $ remainder        : num  1.1429 0.073 -0.0555 0.6097 -0.638 ...
+ $ remainder_l1     : num  -4.29 -4.29 -4.29 -4.29 -4.29 ...
+ $ remainder_l2     : num  4.28 4.28 4.28 4.28 4.28 ...
+ $ anomaly          : chr  "No" "No" "No" "No" ...
+ $ recomposed_l1    : num  21.8 22.1 22.3 21.9 23.4 ...
+ $ recomposed_l2    : num  30.4 30.7 30.9 30.5 31.9 ...
+ $ date             : POSIXct, format: "2024-10-14" "2024-10-14" ...
+ $ dmac             : Factor w/ 616 levels "01F6","02D1",..: 135 135 135 135 135 135 135 135 135 135 ...
+ $ Temp_Diff_3h     : num  0.19 -1.16 -0.89 -1.37 -1.21 ...
+ $ Temp_Diff_6h     : num  -1.58 -4.01 -3.43 -2.24 -2.43 ...
+ $ Temp_Diff_12h    : num  -3.7 -3.79 -3.68 -3.19 -3.17 ...
+ $ Temp_Diff_24h    : num  -5.57 -4.99 -5.36 -4.2 -5.74 ...
+ $ Temp_Diff_30h    : num  -8.47 -9.95 -8.87 -8.15 -9.69 ...
+ $ Temp_Diff_48h    : num  -10.56 -9.36 -8.7 -8.34 -7.18 ...
+ $ Temp_Ratio_3h    : num  0.957 0.932 0.937 0.947 0.957 ...
+ $ Temp_Ratio_6h    : num  0.951 0.927 0.934 0.943 0.953 ...
+ $ Temp_Ratio_12h   : num  0.932 0.907 0.912 0.92 0.929 ...
+ $ Temp_Ratio_24h   : num  0.874 0.85 0.854 0.862 0.87 ...
+ $ Temp_Ratio_30h   : num  0.85 0.827 0.832 0.84 0.848 ...
+ $ Temp_Ratio_48h   : num  0.813 0.791 0.794 0.801 0.808 ...
+ $ Lag_Temp_3h      : num  27.1 27.6 27.5 28.2 28.2 ...
+ $ Lag_Temp_6h      : num  28.8 30.5 30 29 29.4 ...
+ $ Lag_Temp_12h     : num  31 30.3 30.3 30 30.2 ...
+ $ Lag_Temp_24h     : num  32.8 31.5 31.9 31 32.8 ...
+ $ Lag_Temp_30h     : num  35.7 36.4 35.5 35 36.7 ...
+ $ Lag_Temp_48h     : num  37.8 35.9 35.3 35.1 34.2 ...
+ $ Rolling_Avg_3h   : num  28.5 28.4 28.4 28.3 28.2 ...
+ $ Rolling_Avg_6h   : num  28.7 28.6 28.5 28.4 28.3 ...
+ $ Rolling_Avg_12h  : num  29.3 29.2 29.2 29.1 29.1 ...
+ $ Rolling_Avg_24h  : num  31.2 31.2 31.1 31.1 31.1 ...
+ $ Rolling_Avg_30h  : num  32.1 32 32 31.9 31.9 ...
+ $ Rolling_Avg_48h  : num  33.5 33.5 33.5 33.4 33.4 ...
+ $ Rolling_SD_3h    : num  1.31 1.38 1.43 1.48 1.51 ...
+ $ Rolling_SD_6h    : num  1.16 1.18 1.19 1.22 1.23 ...
+ $ Rolling_SD_12h   : num  1.14 1.18 1.21 1.24 1.26 ...
+ $ Rolling_SD_24h   : num  2.46 2.49 2.52 2.55 2.56 ...
+ $ Rolling_SD_30h   : num  2.91 2.93 2.94 2.96 2.96 ...
+ $ Rolling_SD_48h   : num  3.13 3.16 3.18 3.2 3.23 ...
+ $ Rolling_max_3h   : num  31.6 31.6 31.6 31.6 31.6 ...
+ $ Rolling_max_6h   : num  31.6 31.6 31.6 31.6 31.6 ...
+ $ Rolling_max_12h  : num  32 32 32 32 32 ...
+ $ Rolling_max_24h  : num  36.8 36.8 36.8 36.8 36.8 ...
+ $ Rolling_max_30h  : num  38.1 38.1 38.1 38.1 38.1 ...
+ $ Rolling_max_48h  : num  39.6 39.6 39.6 39.6 39.6 ...
+ $ Rolling_min_3h   : num  26.6 26.5 26.5 26.5 26.5 ...
+ $ Rolling_min_6h   : num  26.6 26.5 26.5 26.5 26.5 ...
+ $ Rolling_min_12h  : num  26.6 26.5 26.5 26.5 26.5 ...
+ $ Rolling_min_24h  : num  26.6 26.5 26.5 26.5 26.5 ...
+ $ Rolling_min_30h  : num  26.6 26.5 26.5 26.5 26.5 ...
+ $ Rolling_min_48h  : num  26.6 26.5 26.5 26.5 26.5 ...
+ $ Rolling_range_3h : num  5.08 5.14 5.14 5.14 5.14 5.14 5.14 5.14 5.14 5.14 ...
+ $ Rolling_range_6h : num  5.08 5.14 5.14 5.14 5.14 5.14 5.14 5.14 5.14 5.14 ...
+ $ Rolling_range_12h: num  5.42 5.48 5.48 5.48 5.48 5.48 5.48 5.48 5.48 5.14 ...
+ $ Rolling_range_24h: num  10.2 10.3 10.3 10.3 10.3 ...
+ $ Rolling_range_30h: num  11.5 11.6 11.6 11.6 11.6 ...
+ $ Rolling_range_48h: num  13 13.1 13.1 13.1 13.1 ...
+ $ condition        : Factor w/ 3 levels "Healthy","Sick",..: 2 2 2 2 2 2 2 2 2 2 ...
+ - attr(*, "index_quo")= language ~timestamp
+  ..- attr(*, ".Environment")=&lt;environment: 0x1192980a8&gt; 
+ - attr(*, "index_time_zone")= chr "UTC"
+ - attr(*, "groups")= tibble [273 × 2] (S3: tbl_df/tbl/data.frame)
+  ..$ animal_id: chr [1:273] "C013B0A7736E" "C0323F1C3CCD" "C05DF5029BDD" "C085CBD98BCA" ...
+  ..$ .rows    : list&lt;int&gt; [1:273] 
+  .. ..$ : int [1:1425] 1 2 3 4 5 6 7 8 9 10 ...
+  .. ..$ : int [1:3645] 1426 1427 1428 1429 1430 1431 1432 1433 1434 1435 ...
+  .. ..$ : int [1:3623] 5071 5072 5073 5074 5075 5076 5077 5078 5079 5080 ...
+  .. ..$ : int [1:3625] 8694 8695 8696 8697 8698 8699 8700 8701 8702 8703 ...
+  .. ..$ : int [1:3602] 12319 12320 12321 12322 12323 12324 12325 12326 12327 12328 ...
+  .. ..$ : int [1:3545] 15921 15922 15923 15924 15925 15926 15927 15928 15929 15930 ...
+  .. ..$ : int [1:3622] 19466 19467 19468 19469 19470 19471 19472 19473 19474 19475 ...
+  .. ..$ : int [1:2982] 23088 23089 23090 23091 23092 23093 23094 23095 23096 23097 ...
+  .. ..$ : int [1:3577] 26070 26071 26072 26073 26074 26075 26076 26077 26078 26079 ...
+  .. ..$ : int [1:3132] 29647 29648 29649 29650 29651 29652 29653 29654 29655 29656 ...
+  .. ..$ : int [1:3642] 32779 32780 32781 32782 32783 32784 32785 32786 32787 32788 ...
+  .. ..$ : int [1:3633] 36421 36422 36423 36424 36425 36426 36427 36428 36429 36430 ...
+  .. ..$ : int [1:3623] 40054 40055 40056 40057 40058 40059 40060 40061 40062 40063 ...
+  .. ..$ : int [1:3654] 43677 43678 43679 43680 43681 43682 43683 43684 43685 43686 ...
+  .. ..$ : int [1:1820] 47331 47332 47333 47334 47335 47336 47337 47338 47339 47340 ...
+  .. ..$ : int [1:3601] 49151 49152 49153 49154 49155 49156 49157 49158 49159 49160 ...
+  .. ..$ : int [1:3651] 52752 52753 52754 52755 52756 52757 52758 52759 52760 52761 ...
+  .. ..$ : int [1:711] 56403 56404 56405 56406 56407 56408 56409 56410 56411 56412 ...
+  .. ..$ : int [1:3649] 57114 57115 57116 57117 57118 57119 57120 57121 57122 57123 ...
+  .. ..$ : int [1:3455] 60763 60764 60765 60766 60767 60768 60769 60770 60771 60772 ...
+  .. ..$ : int [1:3424] 64218 64219 64220 64221 64222 64223 64224 64225 64226 64227 ...
+  .. ..$ : int [1:3639] 67642 67643 67644 67645 67646 67647 67648 67649 67650 67651 ...
+  .. ..$ : int [1:3603] 71281 71282 71283 71284 71285 71286 71287 71288 71289 71290 ...
+  .. ..$ : int [1:3641] 74884 74885 74886 74887 74888 74889 74890 74891 74892 74893 ...
+  .. ..$ : int [1:3645] 78525 78526 78527 78528 78529 78530 78531 78532 78533 78534 ...
+  .. ..$ : int [1:3617] 82170 82171 82172 82173 82174 82175 82176 82177 82178 82179 ...
+  .. ..$ : int [1:3617] 85787 85788 85789 85790 85791 85792 85793 85794 85795 85796 ...
+  .. ..$ : int [1:3570] 89404 89405 89406 89407 89408 89409 89410 89411 89412 89413 ...
+  .. ..$ : int [1:3628] 92974 92975 92976 92977 92978 92979 92980 92981 92982 92983 ...
+  .. ..$ : int [1:3638] 96602 96603 96604 96605 96606 96607 96608 96609 96610 96611 ...
+  .. ..$ : int [1:3611] 100240 100241 100242 100243 100244 100245 100246 100247 100248 100249 ...
+  .. ..$ : int [1:3646] 103851 103852 103853 103854 103855 103856 103857 103858 103859 103860 ...
+  .. ..$ : int [1:3633] 107497 107498 107499 107500 107501 107502 107503 107504 107505 107506 ...
+  .. ..$ : int [1:3621] 111130 111131 111132 111133 111134 111135 111136 111137 111138 111139 ...
+  .. ..$ : int [1:3653] 114751 114752 114753 114754 114755 114756 114757 114758 114759 114760 ...
+  .. ..$ : int [1:3058] 118404 118405 118406 118407 118408 118409 118410 118411 118412 118413 ...
+  .. ..$ : int [1:3656] 121462 121463 121464 121465 121466 121467 121468 121469 121470 121471 ...
+  .. ..$ : int [1:3643] 125118 125119 125120 125121 125122 125123 125124 125125 125126 125127 ...
+  .. ..$ : int [1:3648] 128761 128762 128763 128764 128765 128766 128767 128768 128769 128770 ...
+  .. ..$ : int [1:2506] 132409 132410 132411 132412 132413 132414 132415 132416 132417 132418 ...
+  .. ..$ : int [1:3646] 134915 134916 134917 134918 134919 134920 134921 134922 134923 134924 ...
+  .. ..$ : int [1:2440] 138561 138562 138563 138564 138565 138566 138567 138568 138569 138570 ...
+  .. ..$ : int [1:3643] 141001 141002 141003 141004 141005 141006 141007 141008 141009 141010 ...
+  .. ..$ : int [1:3590] 144644 144645 144646 144647 144648 144649 144650 144651 144652 144653 ...
+  .. ..$ : int [1:3633] 148234 148235 148236 148237 148238 148239 148240 148241 148242 148243 ...
+  .. ..$ : int [1:3395] 151867 151868 151869 151870 151871 151872 151873 151874 151875 151876 ...
+  .. ..$ : int [1:2488] 155262 155263 155264 155265 155266 155267 155268 155269 155270 155271 ...
+  .. ..$ : int [1:1496] 157750 157751 157752 157753 157754 157755 157756 157757 157758 157759 ...
+  .. ..$ : int [1:2525] 159246 159247 159248 159249 159250 159251 159252 159253 159254 159255 ...
+  .. ..$ : int [1:3556] 161771 161772 161773 161774 161775 161776 161777 161778 161779 161780 ...
+  .. ..$ : int [1:3647] 165327 165328 165329 165330 165331 165332 165333 165334 165335 165336 ...
+  .. ..$ : int [1:3644] 168974 168975 168976 168977 168978 168979 168980 168981 168982 168983 ...
+  .. ..$ : int [1:2089] 172618 172619 172620 172621 172622 172623 172624 172625 172626 172627 ...
+  .. ..$ : int [1:1343] 174707 174708 174709 174710 174711 174712 174713 174714 174715 174716 ...
+  .. ..$ : int [1:703] 176050 176051 176052 176053 176054 176055 176056 176057 176058 176059 ...
+  .. ..$ : int [1:3587] 176753 176754 176755 176756 176757 176758 176759 176760 176761 176762 ...
+  .. ..$ : int [1:2507] 180340 180341 180342 180343 180344 180345 180346 180347 180348 180349 ...
+  .. ..$ : int [1:1533] 182847 182848 182849 182850 182851 182852 182853 182854 182855 182856 ...
+  .. ..$ : int [1:3632] 184380 184381 184382 184383 184384 184385 184386 184387 184388 184389 ...
+  .. ..$ : int [1:3622] 188012 188013 188014 188015 188016 188017 188018 188019 188020 188021 ...
+  .. ..$ : int [1:3641] 191634 191635 191636 191637 191638 191639 191640 191641 191642 191643 ...
+  .. ..$ : int [1:3597] 195275 195276 195277 195278 195279 195280 195281 195282 195283 195284 ...
+  .. ..$ : int [1:3313] 198872 198873 198874 198875 198876 198877 198878 198879 198880 198881 ...
+  .. ..$ : int [1:2570] 202185 202186 202187 202188 202189 202190 202191 202192 202193 202194 ...
+  .. ..$ : int [1:3608] 204755 204756 204757 204758 204759 204760 204761 204762 204763 204764 ...
+  .. ..$ : int [1:3646] 208363 208364 208365 208366 208367 208368 208369 208370 208371 208372 ...
+  .. ..$ : int [1:3441] 212009 212010 212011 212012 212013 212014 212015 212016 212017 212018 ...
+  .. ..$ : int [1:3617] 215450 215451 215452 215453 215454 215455 215456 215457 215458 215459 ...
+  .. ..$ : int [1:994] 219067 219068 219069 219070 219071 219072 219073 219074 219075 219076 ...
+  .. ..$ : int [1:3607] 220061 220062 220063 220064 220065 220066 220067 220068 220069 220070 ...
+  .. ..$ : int [1:3006] 223668 223669 223670 223671 223672 223673 223674 223675 223676 223677 ...
+  .. ..$ : int [1:3656] 226674 226675 226676 226677 226678 226679 226680 226681 226682 226683 ...
+  .. ..$ : int [1:3639] 230330 230331 230332 230333 230334 230335 230336 230337 230338 230339 ...
+  .. ..$ : int [1:3635] 233969 233970 233971 233972 233973 233974 233975 233976 233977 233978 ...
+  .. ..$ : int [1:3646] 237604 237605 237606 237607 237608 237609 237610 237611 237612 237613 ...
+  .. ..$ : int [1:3645] 241250 241251 241252 241253 241254 241255 241256 241257 241258 241259 ...
+  .. ..$ : int [1:3575] 244895 244896 244897 244898 244899 244900 244901 244902 244903 244904 ...
+  .. ..$ : int [1:3580] 248470 248471 248472 248473 248474 248475 248476 248477 248478 248479 ...
+  .. ..$ : int [1:3546] 252050 252051 252052 252053 252054 252055 252056 252057 252058 252059 ...
+  .. ..$ : int [1:3639] 255596 255597 255598 255599 255600 255601 255602 255603 255604 255605 ...
+  .. ..$ : int [1:3615] 259235 259236 259237 259238 259239 259240 259241 259242 259243 259244 ...
+  .. ..$ : int [1:3638] 262850 262851 262852 262853 262854 262855 262856 262857 262858 262859 ...
+  .. ..$ : int [1:3650] 266488 266489 266490 266491 266492 266493 266494 266495 266496 266497 ...
+  .. ..$ : int [1:3601] 270138 270139 270140 270141 270142 270143 270144 270145 270146 270147 ...
+  .. ..$ : int [1:3586] 273739 273740 273741 273742 273743 273744 273745 273746 273747 273748 ...
+  .. ..$ : int [1:3569] 277325 277326 277327 277328 277329 277330 277331 277332 277333 277334 ...
+  .. ..$ : int [1:1810] 280894 280895 280896 280897 280898 280899 280900 280901 280902 280903 ...
+  .. ..$ : int [1:1551] 282704 282705 282706 282707 282708 282709 282710 282711 282712 282713 ...
+  .. ..$ : int [1:3594] 284255 284256 284257 284258 284259 284260 284261 284262 284263 284264 ...
+  .. ..$ : int [1:3560] 287849 287850 287851 287852 287853 287854 287855 287856 287857 287858 ...
+  .. ..$ : int [1:3638] 291409 291410 291411 291412 291413 291414 291415 291416 291417 291418 ...
+  .. ..$ : int [1:3508] 295047 295048 295049 295050 295051 295052 295053 295054 295055 295056 ...
+  .. ..$ : int [1:3601] 298555 298556 298557 298558 298559 298560 298561 298562 298563 298564 ...
+  .. ..$ : int [1:3479] 302156 302157 302158 302159 302160 302161 302162 302163 302164 302165 ...
+  .. ..$ : int [1:3659] 305635 305636 305637 305638 305639 305640 305641 305642 305643 305644 ...
+  .. ..$ : int [1:3651] 309294 309295 309296 309297 309298 309299 309300 309301 309302 309303 ...
+  .. ..$ : int [1:3572] 312945 312946 312947 312948 312949 312950 312951 312952 312953 312954 ...
+  .. ..$ : int [1:3657] 316517 316518 316519 316520 316521 316522 316523 316524 316525 316526 ...
+  .. ..$ : int [1:3638] 320174 320175 320176 320177 320178 320179 320180 320181 320182 320183 ...
+  .. .. [list output truncated]
+  .. ..@ ptype: int(0) 
+  ..- attr(*, ".drop")= logi TRUE
+ - attr(*, ".internal.selfref")=&lt;externalptr&gt; </code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="trial_weaners_files/figure-html/data_merge-2.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="modelling---only-temperature-observations-as-training-data" class="level2">
+<h2 class="anchored" data-anchor-id="modelling---only-temperature-observations-as-training-data">Modelling - only temperature observations as training data</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(mlr3)</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(mlr3verse)</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(mlr3tuning)</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(mlr3learners)</span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(mlr3pipelines)</span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(mlr3viz)</span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(paradox)</span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Set theoretical limits for temperature</span></span>
+<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a><span class="co"># add temperature classes</span></span>
+<span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a><span class="fu">add_temperature_classes</span>(clean_dt)</span>
+<span id="cb23-12"><a href="#cb23-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-13"><a href="#cb23-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Hot-shot encode the class column</span></span>
+<span id="cb23-14"><a href="#cb23-14" aria-hidden="true" tabindex="-1"></a>model_dt_full <span class="ot">&lt;-</span> <span class="fu">one_hot_encode</span>(clean_dt, <span class="at">col =</span> <span class="st">"class"</span>, <span class="at">drop_col =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb23-15"><a href="#cb23-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-16"><a href="#cb23-16" aria-hidden="true" tabindex="-1"></a><span class="co"># Transform binary target to factor</span></span>
+<span id="cb23-17"><a href="#cb23-17" aria-hidden="true" tabindex="-1"></a>model_dt_full[, target <span class="sc">:</span><span class="er">=</span> <span class="fu">factor</span>(target)]</span>
+<span id="cb23-18"><a href="#cb23-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-19"><a href="#cb23-19" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(model_dt_full, <span class="fu">aes</span>(<span class="at">x =</span> observed)) <span class="sc">+</span></span>
+<span id="cb23-20"><a href="#cb23-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_density</span>(<span class="fu">aes</span>(<span class="at">fill =</span> <span class="fu">factor</span>(class)), <span class="at">alpha =</span> .<span class="dv">7</span>) <span class="sc">+</span></span>
+<span id="cb23-21"><a href="#cb23-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_viridis_d</span>(<span class="at">option =</span> <span class="st">"D"</span>, <span class="at">name =</span> <span class="st">"Condition"</span>) <span class="sc">+</span></span>
+<span id="cb23-22"><a href="#cb23-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Tag temperature distribution by theorical limits"</span>, </span>
+<span id="cb23-23"><a href="#cb23-23" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="st">"Density</span><span class="sc">\n</span><span class="st">"</span>, </span>
+<span id="cb23-24"><a href="#cb23-24" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"</span><span class="sc">\n</span><span class="st">Ear tag temperature (°C)"</span>,</span>
+<span id="cb23-25"><a href="#cb23-25" aria-hidden="true" tabindex="-1"></a>       <span class="at">caption =</span> <span class="st">"&lt;b&gt;Theoretical temperature limits&lt;/b&gt;&lt;br&gt;</span></span>
+<span id="cb23-26"><a href="#cb23-26" aria-hidden="true" tabindex="-1"></a><span class="st">               Hypothermia critical (32 &lt; T ≤ 35°C)&lt;br&gt;</span></span>
+<span id="cb23-27"><a href="#cb23-27" aria-hidden="true" tabindex="-1"></a><span class="st">               Hypothermia severe (T ≤ 32°C)&lt;br&gt;</span></span>
+<span id="cb23-28"><a href="#cb23-28" aria-hidden="true" tabindex="-1"></a><span class="st">               Fever critical (40 ≤ T &lt; 42°C)&lt;br&gt;</span></span>
+<span id="cb23-29"><a href="#cb23-29" aria-hidden="true" tabindex="-1"></a><span class="st">               Fever severe (T ≥ 42°C)&lt;br&gt;</span></span>
+<span id="cb23-30"><a href="#cb23-30" aria-hidden="true" tabindex="-1"></a><span class="st">               Optimum (38.5 ≤ T ≤ 39.5°C)"</span></span>
+<span id="cb23-31"><a href="#cb23-31" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb23-32"><a href="#cb23-32" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_light</span>(<span class="at">base_size =</span> <span class="dv">16</span>) <span class="sc">+</span></span>
+<span id="cb23-33"><a href="#cb23-33" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">plot.caption =</span> <span class="fu">element_markdown</span>(<span class="at">hjust =</span> <span class="dv">0</span>, <span class="at">size =</span> <span class="dv">12</span>)) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="trial_weaners_files/figure-html/toy_model-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Define columns used for training</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>train_cols <span class="ot">&lt;-</span> </span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">c</span>(<span class="st">"class_sick"</span>, <span class="st">"class_normal"</span>, <span class="st">"class_watch"</span>, <span class="st">"class_optimal"</span>, <span class="st">"season"</span>, <span class="st">"trend"</span>, <span class="st">"remainder"</span>, <span class="st">"Temp_Diff_3h"</span>, <span class="st">"Temp_Diff_6h"</span>, <span class="st">"Temp_Diff_12h"</span>, <span class="st">"Temp_Diff_24h"</span>, <span class="st">"Temp_Diff_30h"</span>, <span class="st">"Temp_Diff_48h"</span>, <span class="st">"Temp_Ratio_3h"</span>, <span class="st">"Temp_Ratio_6h"</span>, <span class="st">"Temp_Ratio_12h"</span>, <span class="st">"Temp_Ratio_24h"</span>, <span class="st">"Temp_Ratio_30h"</span>, <span class="st">"Temp_Ratio_48h"</span>, <span class="st">"Lag_Temp_3h"</span>, <span class="st">"Lag_Temp_6h"</span>, <span class="st">"Lag_Temp_12h"</span>, <span class="st">"Lag_Temp_24h"</span>, <span class="st">"Lag_Temp_30h"</span>, <span class="st">"Lag_Temp_48h"</span>, <span class="st">"Rolling_Avg_3h"</span>, <span class="st">"Rolling_Avg_6h"</span>, <span class="st">"Rolling_Avg_12h"</span>, <span class="st">"Rolling_Avg_24h"</span>, <span class="st">"Rolling_Avg_30h"</span>, <span class="st">"Rolling_Avg_48h"</span>, <span class="st">"Rolling_SD_3h"</span>, <span class="st">"Rolling_SD_6h"</span>, <span class="st">"Rolling_SD_12h"</span>, <span class="st">"Rolling_SD_24h"</span>, <span class="st">"Rolling_SD_30h"</span>, <span class="st">"Rolling_SD_48h"</span>, <span class="st">"Rolling_max_3h"</span>, <span class="st">"Rolling_max_6h"</span>, <span class="st">"Rolling_max_12h"</span>, <span class="st">"Rolling_max_24h"</span>, <span class="st">"Rolling_max_30h"</span>, <span class="st">"Rolling_max_48h"</span>, <span class="st">"Rolling_min_3h"</span>, <span class="st">"Rolling_min_6h"</span>, <span class="st">"Rolling_min_12h"</span>, <span class="st">"Rolling_min_24h"</span>, <span class="st">"Rolling_min_30h"</span>, <span class="st">"Rolling_min_48h"</span>, <span class="st">"Rolling_range_3h"</span>, <span class="st">"Rolling_range_6h"</span>, <span class="st">"Rolling_range_12h"</span>, <span class="st">"Rolling_range_24h"</span>, <span class="st">"Rolling_range_30h"</span>, <span class="st">"Rolling_range_48h"</span>)</span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Exclude columns with zero variance</span></span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>train_cols <span class="ot">&lt;-</span> train_cols[<span class="fu">sapply</span>(model_dt_full[, ..train_cols], <span class="cf">function</span>(col) <span class="fu">var</span>(col, <span class="at">na.rm =</span> <span class="cn">TRUE</span>) <span class="sc">&gt;</span> <span class="dv">0</span>)]</span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a><span class="co"># filter dt only to train cols</span></span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a>model_dt <span class="ot">&lt;-</span> model_dt_full[, ..train_cols][, target <span class="sc">:</span><span class="er">=</span> model_dt_full<span class="sc">$</span>target]</span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Simple r part model</span></span>
+<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Set task</span></span>
+<span id="cb24-13"><a href="#cb24-13" aria-hidden="true" tabindex="-1"></a>rpart_task <span class="ot">&lt;-</span> TaskClassif<span class="sc">$</span><span class="fu">new</span>(<span class="at">id =</span> <span class="st">"toy_fit"</span>, <span class="at">backend =</span> model_dt, <span class="at">target =</span> <span class="st">"target"</span>)</span>
+<span id="cb24-14"><a href="#cb24-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-15"><a href="#cb24-15" aria-hidden="true" tabindex="-1"></a><span class="co"># Split task into train/test</span></span>
+<span id="cb24-16"><a href="#cb24-16" aria-hidden="true" tabindex="-1"></a>splits <span class="ot">&lt;-</span> <span class="fu">partition</span>(rpart_task, <span class="at">ratio =</span> <span class="fl">0.8</span>)</span>
+<span id="cb24-17"><a href="#cb24-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-18"><a href="#cb24-18" aria-hidden="true" tabindex="-1"></a><span class="co"># define measures to score/evalutate</span></span>
+<span id="cb24-19"><a href="#cb24-19" aria-hidden="true" tabindex="-1"></a>eval_metrics <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb24-20"><a href="#cb24-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">msr</span>(<span class="st">"classif.acc"</span>),</span>
+<span id="cb24-21"><a href="#cb24-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">msr</span>(<span class="st">"classif.auc"</span>),</span>
+<span id="cb24-22"><a href="#cb24-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">msr</span>(<span class="st">"classif.recall"</span>),</span>
+<span id="cb24-23"><a href="#cb24-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">msr</span>(<span class="st">"classif.sensitivity"</span>),</span>
+<span id="cb24-24"><a href="#cb24-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">msr</span>(<span class="st">"classif.specificity"</span>),</span>
+<span id="cb24-25"><a href="#cb24-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">msr</span>(<span class="st">"classif.fpr"</span>),</span>
+<span id="cb24-26"><a href="#cb24-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">msr</span>(<span class="st">"classif.fnr"</span>),</span>
+<span id="cb24-27"><a href="#cb24-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">msr</span>(<span class="st">"classif.tpr"</span>),</span>
+<span id="cb24-28"><a href="#cb24-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">msr</span>(<span class="st">"classif.tnr"</span>),</span>
+<span id="cb24-29"><a href="#cb24-29" aria-hidden="true" tabindex="-1"></a>  <span class="fu">msr</span>(<span class="st">"classif.ce"</span>),</span>
+<span id="cb24-30"><a href="#cb24-30" aria-hidden="true" tabindex="-1"></a>  <span class="fu">msr</span>(<span class="st">"classif.precision"</span>)</span>
+<span id="cb24-31"><a href="#cb24-31" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb24-32"><a href="#cb24-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-33"><a href="#cb24-33" aria-hidden="true" tabindex="-1"></a><span class="co"># mlr3::mlr_learners</span></span>
+<span id="cb24-34"><a href="#cb24-34" aria-hidden="true" tabindex="-1"></a>rpart_lrn <span class="ot">&lt;-</span> mlr3<span class="sc">::</span><span class="fu">lrn</span>(<span class="st">"classif.rpart"</span>, <span class="at">predict_type =</span> <span class="st">"prob"</span>)</span>
+<span id="cb24-35"><a href="#cb24-35" aria-hidden="true" tabindex="-1"></a>resampling <span class="ot">&lt;-</span> mlr3<span class="sc">::</span><span class="fu">rsmp</span>(<span class="st">"repeated_cv"</span>, <span class="at">folds =</span> <span class="dv">5</span>, <span class="at">repeats =</span> <span class="dv">10</span>)</span>
+<span id="cb24-36"><a href="#cb24-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-37"><a href="#cb24-37" aria-hidden="true" tabindex="-1"></a><span class="co"># rpart ----</span></span>
+<span id="cb24-38"><a href="#cb24-38" aria-hidden="true" tabindex="-1"></a>rr_cv_rpart <span class="ot">&lt;-</span> mlr3<span class="sc">::</span><span class="fu">resample</span>(<span class="at">task =</span> rpart_task,</span>
+<span id="cb24-39"><a href="#cb24-39" aria-hidden="true" tabindex="-1"></a>                              <span class="at">learner =</span> rpart_lrn,</span>
+<span id="cb24-40"><a href="#cb24-40" aria-hidden="true" tabindex="-1"></a>                              <span class="at">resampling =</span> resampling)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>INFO  [13:58:00.837] [mlr3] Applying learner 'classif.rpart' on task 'toy_fit' (iter 1/50)
+INFO  [13:58:01.429] [mlr3] Applying learner 'classif.rpart' on task 'toy_fit' (iter 2/50)
+INFO  [13:58:02.008] [mlr3] Applying learner 'classif.rpart' on task 'toy_fit' (iter 3/50)
+INFO  [13:58:02.606] [mlr3] Applying learner 'classif.rpart' on task 'toy_fit' (iter 4/50)
+INFO  [13:58:03.208] [mlr3] Applying learner 'classif.rpart' on task 'toy_fit' (iter 5/50)
+INFO  [13:58:03.820] [mlr3] Applying learner 'classif.rpart' on task 'toy_fit' (iter 6/50)
+INFO  [13:58:04.444] [mlr3] Applying learner 'classif.rpart' on task 'toy_fit' (iter 7/50)
+INFO  [13:58:05.031] [mlr3] Applying learner 'classif.rpart' on task 'toy_fit' (iter 8/50)
+INFO  [13:58:05.665] [mlr3] Applying learner 'classif.rpart' on task 'toy_fit' (iter 9/50)
+INFO  [13:58:06.297] [mlr3] Applying learner 'classif.rpart' on task 'toy_fit' (iter 10/50)
+INFO  [13:58:06.856] [mlr3] Applying learner 'classif.rpart' on task 'toy_fit' (iter 11/50)
+INFO  [13:58:07.571] [mlr3] Applying learner 'classif.rpart' on task 'toy_fit' (iter 12/50)
+INFO  [13:58:08.233] [mlr3] Applying learner 'classif.rpart' on task 'toy_fit' (iter 13/50)
+INFO  [13:58:08.784] [mlr3] Applying learner 'classif.rpart' on task 'toy_fit' (iter 14/50)
+INFO  [13:58:09.358] [mlr3] Applying learner 'classif.rpart' on task 'toy_fit' (iter 15/50)
+INFO  [13:58:10.004] [mlr3] Applying learner 'classif.rpart' on task 'toy_fit' (iter 16/50)
+INFO  [13:58:10.596] [mlr3] Applying learner 'classif.rpart' on task 'toy_fit' (iter 17/50)
+INFO  [13:58:11.147] [mlr3] Applying learner 'classif.rpart' on task 'toy_fit' (iter 18/50)
+INFO  [13:58:11.704] [mlr3] Applying learner 'classif.rpart' on task 'toy_fit' (iter 19/50)
+INFO  [13:58:12.263] [mlr3] Applying learner 'classif.rpart' on task 'toy_fit' (iter 20/50)
+INFO  [13:58:12.836] [mlr3] Applying learner 'classif.rpart' on task 'toy_fit' (iter 21/50)
+INFO  [13:58:13.384] [mlr3] Applying learner 'classif.rpart' on task 'toy_fit' (iter 22/50)
+INFO  [13:58:13.916] [mlr3] Applying learner 'classif.rpart' on task 'toy_fit' (iter 23/50)
+INFO  [13:58:14.489] [mlr3] Applying learner 'classif.rpart' on task 'toy_fit' (iter 24/50)
+INFO  [13:58:15.057] [mlr3] Applying learner 'classif.rpart' on task 'toy_fit' (iter 25/50)
+INFO  [13:58:15.611] [mlr3] Applying learner 'classif.rpart' on task 'toy_fit' (iter 26/50)
+INFO  [13:58:16.174] [mlr3] Applying learner 'classif.rpart' on task 'toy_fit' (iter 27/50)
+INFO  [13:58:16.721] [mlr3] Applying learner 'classif.rpart' on task 'toy_fit' (iter 28/50)
+INFO  [13:58:17.284] [mlr3] Applying learner 'classif.rpart' on task 'toy_fit' (iter 29/50)
+INFO  [13:58:17.837] [mlr3] Applying learner 'classif.rpart' on task 'toy_fit' (iter 30/50)
+INFO  [13:58:18.440] [mlr3] Applying learner 'classif.rpart' on task 'toy_fit' (iter 31/50)
+INFO  [13:58:19.180] [mlr3] Applying learner 'classif.rpart' on task 'toy_fit' (iter 32/50)
+INFO  [13:58:19.756] [mlr3] Applying learner 'classif.rpart' on task 'toy_fit' (iter 33/50)
+INFO  [13:58:20.339] [mlr3] Applying learner 'classif.rpart' on task 'toy_fit' (iter 34/50)
+INFO  [13:58:20.909] [mlr3] Applying learner 'classif.rpart' on task 'toy_fit' (iter 35/50)
+INFO  [13:58:21.539] [mlr3] Applying learner 'classif.rpart' on task 'toy_fit' (iter 36/50)
+INFO  [13:58:22.136] [mlr3] Applying learner 'classif.rpart' on task 'toy_fit' (iter 37/50)
+INFO  [13:58:22.709] [mlr3] Applying learner 'classif.rpart' on task 'toy_fit' (iter 38/50)
+INFO  [13:58:23.301] [mlr3] Applying learner 'classif.rpart' on task 'toy_fit' (iter 39/50)
+INFO  [13:58:23.925] [mlr3] Applying learner 'classif.rpart' on task 'toy_fit' (iter 40/50)
+INFO  [13:58:24.495] [mlr3] Applying learner 'classif.rpart' on task 'toy_fit' (iter 41/50)
+INFO  [13:58:25.091] [mlr3] Applying learner 'classif.rpart' on task 'toy_fit' (iter 42/50)
+INFO  [13:58:25.701] [mlr3] Applying learner 'classif.rpart' on task 'toy_fit' (iter 43/50)
+INFO  [13:58:26.262] [mlr3] Applying learner 'classif.rpart' on task 'toy_fit' (iter 44/50)
+INFO  [13:58:26.833] [mlr3] Applying learner 'classif.rpart' on task 'toy_fit' (iter 45/50)
+INFO  [13:58:27.404] [mlr3] Applying learner 'classif.rpart' on task 'toy_fit' (iter 46/50)
+INFO  [13:58:27.975] [mlr3] Applying learner 'classif.rpart' on task 'toy_fit' (iter 47/50)
+INFO  [13:58:28.543] [mlr3] Applying learner 'classif.rpart' on task 'toy_fit' (iter 48/50)
+INFO  [13:58:29.111] [mlr3] Applying learner 'classif.rpart' on task 'toy_fit' (iter 49/50)
+INFO  [13:58:29.668] [mlr3] Applying learner 'classif.rpart' on task 'toy_fit' (iter 50/50)</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="co"># evaluate</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>eval_cv_rpart <span class="ot">&lt;-</span> rr_cv_rpart<span class="sc">$</span><span class="fu">score</span>(<span class="at">measure =</span> eval_metrics)</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>eval_cv_rpart_mean <span class="ot">&lt;-</span> rr_cv_rpart<span class="sc">$</span><span class="fu">aggregate</span>(<span class="at">measure =</span> eval_metrics) </span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(<span class="fu">density</span>(eval_cv_rpart<span class="sc">$</span>classif.fpr))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="trial_weaners_files/figure-html/toy_model-2.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(<span class="fu">density</span>(eval_cv_rpart<span class="sc">$</span>classif.acc))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="trial_weaners_files/figure-html/toy_model-3.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="fu">autoplot</span>(rr_cv_rpart, <span class="at">type =</span> <span class="st">"roc"</span>) <span class="sc">+</span></span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">autoplot</span>(rr_cv_rpart, <span class="at">type =</span> <span class="st">"prc"</span>) <span class="sc">+</span> </span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggtitle</span>(<span class="st">"ROC and PRC - rpart"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="trial_weaners_files/figure-html/toy_model-4.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Train and check importance</span></span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>rpart_lrn<span class="sc">$</span><span class="fu">train</span>(rpart_task, splits<span class="sc">$</span>train)</span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>rpart_importance <span class="ot">&lt;-</span> rpart_lrn<span class="sc">$</span><span class="fu">importance</span>()</span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>p3 <span class="ot">&lt;-</span> <span class="fu">plot_var_importance</span>(rpart_importance) <span class="sc">+</span> <span class="fu">ggtitle</span>(<span class="st">"Variable importance - rpart"</span>)</span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a>p3</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="trial_weaners_files/figure-html/toy_model-5.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Which variable was selected?</span></span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>rpart_lrn<span class="sc">$</span><span class="fu">selected_features</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> [1] "Rolling_max_30h"   "Rolling_max_24h"   "Rolling_min_48h"  
+ [4] "trend"             "Rolling_SD_48h"    "Rolling_max_48h"  
+ [7] "Rolling_range_48h" "Rolling_range_30h" "Rolling_min_24h"  
+[10] "Rolling_SD_24h"   </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Prediction on test</span></span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>rpart_prediction <span class="ot">&lt;-</span> rpart_lrn<span class="sc">$</span><span class="fu">predict</span>(rpart_task, splits<span class="sc">$</span>test)</span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>rpart_prediction<span class="sc">$</span><span class="fu">score</span>(<span class="at">measure =</span> eval_metrics) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>        classif.acc         classif.auc      classif.recall classif.sensitivity 
+          0.7524541           0.7444115           0.4018390           0.4018390 
+classif.specificity         classif.fpr         classif.fnr         classif.tpr 
+          0.9358991           0.0641009           0.5981610           0.4018390 
+        classif.tnr          classif.ce   classif.precision 
+          0.9358991           0.2475459           0.7663507 </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>rpart_prediction<span class="sc">$</span>confusion</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>        truth
+response    0    1
+       0 1617  493
+       1 2407 7198</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="fu">autoplot</span>(rpart_prediction, <span class="at">type =</span> <span class="st">"threshold"</span>, <span class="at">measure =</span> <span class="fu">msr</span>(<span class="st">"classif.fpr"</span>)) <span class="sc">+</span></span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">autoplot</span>(rpart_prediction, <span class="at">type =</span> <span class="st">"threshold"</span>, <span class="at">measure =</span> <span class="fu">msr</span>(<span class="st">"classif.acc"</span>)) <span class="sc">+</span> </span>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggtitle</span>(<span class="st">"Threshold check - rpart"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="trial_weaners_files/figure-html/toy_model-6.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="co"># # xgboost ----</span></span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a><span class="co"># xgb_lrn &lt;- mlr3::lrn("classif.xgboost", </span></span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a><span class="co">#                      predict_type = "prob")</span></span>
+<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
+<span id="cb37-5"><a href="#cb37-5" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
+<span id="cb37-6"><a href="#cb37-6" aria-hidden="true" tabindex="-1"></a><span class="co"># # Resampling</span></span>
+<span id="cb37-7"><a href="#cb37-7" aria-hidden="true" tabindex="-1"></a><span class="co"># rr_cv_xgb &lt;- mlr3::resample(task = rpart_task,</span></span>
+<span id="cb37-8"><a href="#cb37-8" aria-hidden="true" tabindex="-1"></a><span class="co">#                             learner = xgb_lrn,</span></span>
+<span id="cb37-9"><a href="#cb37-9" aria-hidden="true" tabindex="-1"></a><span class="co">#                             resampling = resampling)</span></span>
+<span id="cb37-10"><a href="#cb37-10" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
+<span id="cb37-11"><a href="#cb37-11" aria-hidden="true" tabindex="-1"></a><span class="co"># # evaluate</span></span>
+<span id="cb37-12"><a href="#cb37-12" aria-hidden="true" tabindex="-1"></a><span class="co"># eval_cv_xgb &lt;- rr_cv_xgb$score(measure = eval_metrics)</span></span>
+<span id="cb37-13"><a href="#cb37-13" aria-hidden="true" tabindex="-1"></a><span class="co"># eval_cv_xgb_mean &lt;- rr_cv_xgb$aggregate(measure = eval_metrics)</span></span>
+<span id="cb37-14"><a href="#cb37-14" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
+<span id="cb37-15"><a href="#cb37-15" aria-hidden="true" tabindex="-1"></a><span class="co"># plot(density(eval_cv_xgb$classif.fpr))</span></span>
+<span id="cb37-16"><a href="#cb37-16" aria-hidden="true" tabindex="-1"></a><span class="co"># plot(density(eval_cv_xgb$classif.acc))</span></span>
+<span id="cb37-17"><a href="#cb37-17" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
+<span id="cb37-18"><a href="#cb37-18" aria-hidden="true" tabindex="-1"></a><span class="co"># autoplot(rr_cv_xgb, type = "roc") +</span></span>
+<span id="cb37-19"><a href="#cb37-19" aria-hidden="true" tabindex="-1"></a><span class="co"># autoplot(rr_cv_xgb, type = "prc") + </span></span>
+<span id="cb37-20"><a href="#cb37-20" aria-hidden="true" tabindex="-1"></a><span class="co">#   ggtitle("ROC and PRC - xgboost")</span></span>
+<span id="cb37-21"><a href="#cb37-21" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
+<span id="cb37-22"><a href="#cb37-22" aria-hidden="true" tabindex="-1"></a><span class="co"># # Train and check importance</span></span>
+<span id="cb37-23"><a href="#cb37-23" aria-hidden="true" tabindex="-1"></a><span class="co"># xgb_lrn$train(rpart_task, splits$train)</span></span>
+<span id="cb37-24"><a href="#cb37-24" aria-hidden="true" tabindex="-1"></a><span class="co"># xgb_importance &lt;- xgb_lrn$importance()</span></span>
+<span id="cb37-25"><a href="#cb37-25" aria-hidden="true" tabindex="-1"></a><span class="co"># p4 &lt;- plot_var_importance(xgb_importance) + ggtitle("Variable importance - xgboost")</span></span>
+<span id="cb37-26"><a href="#cb37-26" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
+<span id="cb37-27"><a href="#cb37-27" aria-hidden="true" tabindex="-1"></a><span class="co"># xgb_prediction &lt;- xgb_lrn$predict(rpart_task, splits$test)</span></span>
+<span id="cb37-28"><a href="#cb37-28" aria-hidden="true" tabindex="-1"></a><span class="co"># xgb_prediction$score(measure = eval_metrics) </span></span>
+<span id="cb37-29"><a href="#cb37-29" aria-hidden="true" tabindex="-1"></a><span class="co"># xgb_prediction$confusion</span></span>
+<span id="cb37-30"><a href="#cb37-30" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
+<span id="cb37-31"><a href="#cb37-31" aria-hidden="true" tabindex="-1"></a><span class="co"># autoplot(xgb_prediction, type = "threshold", measure = msr("classif.fpr")) +</span></span>
+<span id="cb37-32"><a href="#cb37-32" aria-hidden="true" tabindex="-1"></a><span class="co"># autoplot(xgb_prediction, type = "threshold", measure = msr("classif.acc")) + </span></span>
+<span id="cb37-33"><a href="#cb37-33" aria-hidden="true" tabindex="-1"></a><span class="co">#   ggtitle("Threshold check - xgboost")</span></span>
+<span id="cb37-34"><a href="#cb37-34" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
+<span id="cb37-35"><a href="#cb37-35" aria-hidden="true" tabindex="-1"></a><span class="co"># # ranger ----</span></span>
+<span id="cb37-36"><a href="#cb37-36" aria-hidden="true" tabindex="-1"></a><span class="co"># ranger_lrn &lt;- mlr3::lrn("classif.ranger", </span></span>
+<span id="cb37-37"><a href="#cb37-37" aria-hidden="true" tabindex="-1"></a><span class="co">#                         predict_type = "prob",</span></span>
+<span id="cb37-38"><a href="#cb37-38" aria-hidden="true" tabindex="-1"></a><span class="co">#                         importance = "impurity")</span></span>
+<span id="cb37-39"><a href="#cb37-39" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
+<span id="cb37-40"><a href="#cb37-40" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
+<span id="cb37-41"><a href="#cb37-41" aria-hidden="true" tabindex="-1"></a><span class="co"># # Resampling</span></span>
+<span id="cb37-42"><a href="#cb37-42" aria-hidden="true" tabindex="-1"></a><span class="co"># rr_cv_ranger &lt;- mlr3::resample(task = rpart_task,</span></span>
+<span id="cb37-43"><a href="#cb37-43" aria-hidden="true" tabindex="-1"></a><span class="co">#                                learner = ranger_lrn,</span></span>
+<span id="cb37-44"><a href="#cb37-44" aria-hidden="true" tabindex="-1"></a><span class="co">#                                resampling = resampling)</span></span>
+<span id="cb37-45"><a href="#cb37-45" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
+<span id="cb37-46"><a href="#cb37-46" aria-hidden="true" tabindex="-1"></a><span class="co"># evaluate</span></span>
+<span id="cb37-47"><a href="#cb37-47" aria-hidden="true" tabindex="-1"></a><span class="co"># eval_cv_ranger &lt;- rr_cv_ranger$score(measure = eval_metrics)</span></span>
+<span id="cb37-48"><a href="#cb37-48" aria-hidden="true" tabindex="-1"></a><span class="co"># eval_cv_ranger_mean &lt;- rr_cv_ranger$aggregate(measure = eval_metrics)</span></span>
+<span id="cb37-49"><a href="#cb37-49" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
+<span id="cb37-50"><a href="#cb37-50" aria-hidden="true" tabindex="-1"></a><span class="co"># plot(density(eval_cv_ranger$classif.fpr))</span></span>
+<span id="cb37-51"><a href="#cb37-51" aria-hidden="true" tabindex="-1"></a><span class="co"># plot(density(eval_cv_ranger$classif.acc))</span></span>
+<span id="cb37-52"><a href="#cb37-52" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
+<span id="cb37-53"><a href="#cb37-53" aria-hidden="true" tabindex="-1"></a><span class="co"># autoplot(rr_cv_rpart, type = "roc") +</span></span>
+<span id="cb37-54"><a href="#cb37-54" aria-hidden="true" tabindex="-1"></a><span class="co"># autoplot(rr_cv_rpart, type = "prc") +</span></span>
+<span id="cb37-55"><a href="#cb37-55" aria-hidden="true" tabindex="-1"></a><span class="co">#   ggtitle("ROC and PRC - ranger")</span></span>
+<span id="cb37-56"><a href="#cb37-56" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
+<span id="cb37-57"><a href="#cb37-57" aria-hidden="true" tabindex="-1"></a><span class="co"># # # Train and check importance</span></span>
+<span id="cb37-58"><a href="#cb37-58" aria-hidden="true" tabindex="-1"></a><span class="co"># ranger_lrn$train(rpart_task, splits$train)</span></span>
+<span id="cb37-59"><a href="#cb37-59" aria-hidden="true" tabindex="-1"></a><span class="co"># ranger_importance &lt;- ranger_lrn$importance()</span></span>
+<span id="cb37-60"><a href="#cb37-60" aria-hidden="true" tabindex="-1"></a><span class="co"># p5 &lt;- plot_var_importance(ranger_importance) + ggtitle("Variable importance - Ranger")</span></span>
+<span id="cb37-61"><a href="#cb37-61" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
+<span id="cb37-62"><a href="#cb37-62" aria-hidden="true" tabindex="-1"></a><span class="co"># ranger_prediction &lt;- ranger_lrn$predict(rpart_task, splits$test)</span></span>
+<span id="cb37-63"><a href="#cb37-63" aria-hidden="true" tabindex="-1"></a><span class="co"># ranger_prediction$score(measure = eval_metrics)</span></span>
+<span id="cb37-64"><a href="#cb37-64" aria-hidden="true" tabindex="-1"></a><span class="co"># ranger_prediction$confusion</span></span>
+<span id="cb37-65"><a href="#cb37-65" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
+<span id="cb37-66"><a href="#cb37-66" aria-hidden="true" tabindex="-1"></a><span class="co"># autoplot(ranger_prediction, type = "threshold", measure = msr("classif.fpr")) +</span></span>
+<span id="cb37-67"><a href="#cb37-67" aria-hidden="true" tabindex="-1"></a><span class="co"># autoplot(ranger_prediction, type = "threshold", measure = msr("classif.acc")) +</span></span>
+<span id="cb37-68"><a href="#cb37-68" aria-hidden="true" tabindex="-1"></a><span class="co">#   ggtitle("Threshold check - ranger")</span></span>
+<span id="cb37-69"><a href="#cb37-69" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
+<span id="cb37-70"><a href="#cb37-70" aria-hidden="true" tabindex="-1"></a><span class="co"># # NNET ----</span></span>
+<span id="cb37-71"><a href="#cb37-71" aria-hidden="true" tabindex="-1"></a><span class="co"># nnet_lrn &lt;- mlr3::lrn("classif.nnet",</span></span>
+<span id="cb37-72"><a href="#cb37-72" aria-hidden="true" tabindex="-1"></a><span class="co">#                       predict_type = "prob")</span></span>
+<span id="cb37-73"><a href="#cb37-73" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
+<span id="cb37-74"><a href="#cb37-74" aria-hidden="true" tabindex="-1"></a><span class="co"># # Resampling</span></span>
+<span id="cb37-75"><a href="#cb37-75" aria-hidden="true" tabindex="-1"></a><span class="co"># rr_cv_nnet &lt;- mlr3::resample(task = rpart_task,</span></span>
+<span id="cb37-76"><a href="#cb37-76" aria-hidden="true" tabindex="-1"></a><span class="co">#                              learner = nnet_lrn,</span></span>
+<span id="cb37-77"><a href="#cb37-77" aria-hidden="true" tabindex="-1"></a><span class="co">#                              resampling = resampling)</span></span>
+<span id="cb37-78"><a href="#cb37-78" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
+<span id="cb37-79"><a href="#cb37-79" aria-hidden="true" tabindex="-1"></a><span class="co"># # evaluate</span></span>
+<span id="cb37-80"><a href="#cb37-80" aria-hidden="true" tabindex="-1"></a><span class="co"># eval_cv_nnet &lt;- rr_cv_nnet$aggregate(measure = eval_metrics)</span></span>
+<span id="cb37-81"><a href="#cb37-81" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
+<span id="cb37-82"><a href="#cb37-82" aria-hidden="true" tabindex="-1"></a><span class="co"># plot(density(eval_cv_nnet$classif.fpr))</span></span>
+<span id="cb37-83"><a href="#cb37-83" aria-hidden="true" tabindex="-1"></a><span class="co"># plot(density(eval_cv_nnet$classif.acc))</span></span>
+<span id="cb37-84"><a href="#cb37-84" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
+<span id="cb37-85"><a href="#cb37-85" aria-hidden="true" tabindex="-1"></a><span class="co"># autoplot(rr_cv_nnet, type = "roc") +</span></span>
+<span id="cb37-86"><a href="#cb37-86" aria-hidden="true" tabindex="-1"></a><span class="co"># autoplot(rr_cv_nnet, type = "prc") +</span></span>
+<span id="cb37-87"><a href="#cb37-87" aria-hidden="true" tabindex="-1"></a><span class="co">#   ggtitle("ROC and PRC - nnet")</span></span>
+<span id="cb37-88"><a href="#cb37-88" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
+<span id="cb37-89"><a href="#cb37-89" aria-hidden="true" tabindex="-1"></a><span class="co"># # # Train and check importance</span></span>
+<span id="cb37-90"><a href="#cb37-90" aria-hidden="true" tabindex="-1"></a><span class="co"># nnet_lrn$train(rpart_task, splits$train)</span></span>
+<span id="cb37-91"><a href="#cb37-91" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
+<span id="cb37-92"><a href="#cb37-92" aria-hidden="true" tabindex="-1"></a><span class="co"># nnet_prediction &lt;- nnet_lrn$predict(rpart_task, splits$test)</span></span>
+<span id="cb37-93"><a href="#cb37-93" aria-hidden="true" tabindex="-1"></a><span class="co"># nnet_prediction$score(measure = eval_metrics)</span></span>
+<span id="cb37-94"><a href="#cb37-94" aria-hidden="true" tabindex="-1"></a><span class="co"># nnet_prediction$confusion</span></span>
+<span id="cb37-95"><a href="#cb37-95" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
+<span id="cb37-96"><a href="#cb37-96" aria-hidden="true" tabindex="-1"></a><span class="co"># autoplot(nnet_prediction, type = "threshold", measure = msr("classif.fpr")) +</span></span>
+<span id="cb37-97"><a href="#cb37-97" aria-hidden="true" tabindex="-1"></a><span class="co"># autoplot(nnet_prediction, type = "threshold", measure = msr("classif.acc")) +</span></span>
+<span id="cb37-98"><a href="#cb37-98" aria-hidden="true" tabindex="-1"></a><span class="co">#   ggtitle("Threshold check - nnet")</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="modelling-comparison---benchmarking-ml-approaches" class="level2">
+<h2 class="anchored" data-anchor-id="modelling-comparison---benchmarking-ml-approaches">Modelling comparison - benchmarking ML approaches</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="co"># train test split</span></span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sort</span>(<span class="fu">unique</span>(model_dt_full<span class="sc">$</span>date))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "2024-10-07 AWST" "2024-10-09 AWST" "2024-10-11 AWST" "2024-10-14 AWST"
+[5] "2024-10-16 AWST" "2024-10-18 AWST" "2024-10-21 AWST" "2024-10-25 AWST"
+[9] "2024-10-28 AWST"</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a>split_date <span class="ot">&lt;-</span> <span class="fu">as.Date</span>(<span class="st">"2024-10-20"</span>)  <span class="co"># Define split date</span></span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a><span class="co"># split by date then select `train_cols`</span></span>
+<span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a>train_data <span class="ot">&lt;-</span> model_dt_full[date <span class="sc">&lt;</span> split_date]</span>
+<span id="cb40-5"><a href="#cb40-5" aria-hidden="true" tabindex="-1"></a>train_data <span class="ot">&lt;-</span> train_data[, ..train_cols][, target <span class="sc">:</span><span class="er">=</span> train_data<span class="sc">$</span>target]</span>
+<span id="cb40-6"><a href="#cb40-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb40-7"><a href="#cb40-7" aria-hidden="true" tabindex="-1"></a>test_data <span class="ot">&lt;-</span> model_dt_full[date <span class="sc">&gt;=</span> split_date]</span>
+<span id="cb40-8"><a href="#cb40-8" aria-hidden="true" tabindex="-1"></a>test_data <span class="ot">&lt;-</span> test_data[, ..train_cols][, target <span class="sc">:</span><span class="er">=</span> test_data<span class="sc">$</span>target]</span>
+<span id="cb40-9"><a href="#cb40-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb40-10"><a href="#cb40-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Create separate tasks for train and test</span></span>
+<span id="cb40-11"><a href="#cb40-11" aria-hidden="true" tabindex="-1"></a>train_task <span class="ot">&lt;-</span> TaskClassif<span class="sc">$</span><span class="fu">new</span>(<span class="at">id =</span> <span class="st">"train_task"</span>, <span class="at">backend =</span> train_data, <span class="at">target =</span> <span class="st">"target"</span>)</span>
+<span id="cb40-12"><a href="#cb40-12" aria-hidden="true" tabindex="-1"></a>test_task <span class="ot">&lt;-</span> TaskClassif<span class="sc">$</span><span class="fu">new</span>(<span class="at">id =</span> <span class="st">"test_task"</span>, <span class="at">backend =</span> test_data, <span class="at">target =</span> <span class="st">"target"</span>)</span>
+<span id="cb40-13"><a href="#cb40-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb40-14"><a href="#cb40-14" aria-hidden="true" tabindex="-1"></a><span class="co"># Define the task</span></span>
+<span id="cb40-15"><a href="#cb40-15" aria-hidden="true" tabindex="-1"></a>lrn_xgboost <span class="ot">&lt;-</span> <span class="fu">lrn</span>(<span class="st">"classif.xgboost"</span>, <span class="at">predict_type =</span> <span class="st">"prob"</span>)</span>
+<span id="cb40-16"><a href="#cb40-16" aria-hidden="true" tabindex="-1"></a>lrn_nnet <span class="ot">&lt;-</span> <span class="fu">lrn</span>(<span class="st">"classif.nnet"</span>, <span class="at">predict_type =</span> <span class="st">"prob"</span>)</span>
+<span id="cb40-17"><a href="#cb40-17" aria-hidden="true" tabindex="-1"></a>lrn_logreg <span class="ot">&lt;-</span> <span class="fu">lrn</span>(<span class="st">"classif.log_reg"</span>, <span class="at">predict_type =</span> <span class="st">"prob"</span>)</span>
+<span id="cb40-18"><a href="#cb40-18" aria-hidden="true" tabindex="-1"></a>lrn_glm <span class="ot">&lt;-</span> <span class="fu">lrn</span>(<span class="st">"classif.glmnet"</span>, <span class="at">predict_type =</span> <span class="st">"prob"</span>)</span>
+<span id="cb40-19"><a href="#cb40-19" aria-hidden="true" tabindex="-1"></a>lrn_ranger <span class="ot">&lt;-</span> <span class="fu">lrn</span>(<span class="st">"classif.ranger"</span>, <span class="at">predict_type =</span> <span class="st">"prob"</span>, <span class="at">importance =</span> <span class="st">"impurity"</span>)</span>
+<span id="cb40-20"><a href="#cb40-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb40-21"><a href="#cb40-21" aria-hidden="true" tabindex="-1"></a><span class="co"># Define a list of learners</span></span>
+<span id="cb40-22"><a href="#cb40-22" aria-hidden="true" tabindex="-1"></a>learners <span class="ot">&lt;-</span> <span class="fu">list</span>(lrn_xgboost, lrn_glm, lrn_logreg, lrn_ranger, lrn_nnet)</span>
+<span id="cb40-23"><a href="#cb40-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb40-24"><a href="#cb40-24" aria-hidden="true" tabindex="-1"></a><span class="co"># Define the resampling method</span></span>
+<span id="cb40-25"><a href="#cb40-25" aria-hidden="true" tabindex="-1"></a><span class="co"># resampling &lt;- rsmp("holdout", ratio = .7)</span></span>
+<span id="cb40-26"><a href="#cb40-26" aria-hidden="true" tabindex="-1"></a>resampling_tsk <span class="ot">&lt;-</span> mlr3<span class="sc">::</span><span class="fu">rsmp</span>(<span class="st">"repeated_cv"</span>, <span class="at">folds =</span> <span class="dv">5</span>, <span class="at">repeats =</span> <span class="dv">5</span>)</span>
+<span id="cb40-27"><a href="#cb40-27" aria-hidden="true" tabindex="-1"></a>resampling_tsk<span class="sc">$</span><span class="fu">instantiate</span>(train_task)</span>
+<span id="cb40-28"><a href="#cb40-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb40-29"><a href="#cb40-29" aria-hidden="true" tabindex="-1"></a><span class="co"># Define the evaluation measures</span></span>
+<span id="cb40-30"><a href="#cb40-30" aria-hidden="true" tabindex="-1"></a>measures <span class="ot">&lt;-</span> <span class="fu">msrs</span>(<span class="fu">c</span>(<span class="st">"classif.fpr"</span>, <span class="st">"classif.auc"</span>, <span class="st">"classif.acc"</span>))</span>
+<span id="cb40-31"><a href="#cb40-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb40-32"><a href="#cb40-32" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a benchmark design</span></span>
+<span id="cb40-33"><a href="#cb40-33" aria-hidden="true" tabindex="-1"></a>design <span class="ot">&lt;-</span> <span class="fu">benchmark_grid</span>(</span>
+<span id="cb40-34"><a href="#cb40-34" aria-hidden="true" tabindex="-1"></a>  <span class="at">tasks =</span> train_task,</span>
+<span id="cb40-35"><a href="#cb40-35" aria-hidden="true" tabindex="-1"></a>  <span class="at">learners =</span> learners,</span>
+<span id="cb40-36"><a href="#cb40-36" aria-hidden="true" tabindex="-1"></a>  <span class="at">resamplings =</span> resampling_tsk</span>
+<span id="cb40-37"><a href="#cb40-37" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb40-38"><a href="#cb40-38" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb40-39"><a href="#cb40-39" aria-hidden="true" tabindex="-1"></a><span class="co"># Run the benchmark</span></span>
+<span id="cb40-40"><a href="#cb40-40" aria-hidden="true" tabindex="-1"></a>bmr <span class="ot">&lt;-</span> <span class="fu">benchmark</span>(design)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>INFO  [13:58:33.371] [mlr3] Running benchmark with 125 resampling iterations
+INFO  [13:58:33.373] [mlr3] Applying learner 'classif.xgboost' on task 'train_task' (iter 1/25)
+INFO  [13:58:33.643] [mlr3] Applying learner 'classif.xgboost' on task 'train_task' (iter 2/25)
+INFO  [13:58:33.890] [mlr3] Applying learner 'classif.xgboost' on task 'train_task' (iter 3/25)
+INFO  [13:58:34.140] [mlr3] Applying learner 'classif.xgboost' on task 'train_task' (iter 4/25)
+INFO  [13:58:34.388] [mlr3] Applying learner 'classif.xgboost' on task 'train_task' (iter 5/25)
+INFO  [13:58:34.638] [mlr3] Applying learner 'classif.xgboost' on task 'train_task' (iter 6/25)
+INFO  [13:58:34.886] [mlr3] Applying learner 'classif.xgboost' on task 'train_task' (iter 7/25)
+INFO  [13:58:35.134] [mlr3] Applying learner 'classif.xgboost' on task 'train_task' (iter 8/25)
+INFO  [13:58:35.388] [mlr3] Applying learner 'classif.xgboost' on task 'train_task' (iter 9/25)
+INFO  [13:58:35.635] [mlr3] Applying learner 'classif.xgboost' on task 'train_task' (iter 10/25)
+INFO  [13:58:35.935] [mlr3] Applying learner 'classif.xgboost' on task 'train_task' (iter 11/25)
+INFO  [13:58:36.187] [mlr3] Applying learner 'classif.xgboost' on task 'train_task' (iter 12/25)
+INFO  [13:58:36.437] [mlr3] Applying learner 'classif.xgboost' on task 'train_task' (iter 13/25)
+INFO  [13:58:36.688] [mlr3] Applying learner 'classif.xgboost' on task 'train_task' (iter 14/25)
+INFO  [13:58:37.031] [mlr3] Applying learner 'classif.xgboost' on task 'train_task' (iter 15/25)
+INFO  [13:58:37.278] [mlr3] Applying learner 'classif.xgboost' on task 'train_task' (iter 16/25)
+INFO  [13:58:37.532] [mlr3] Applying learner 'classif.xgboost' on task 'train_task' (iter 17/25)
+INFO  [13:58:37.785] [mlr3] Applying learner 'classif.xgboost' on task 'train_task' (iter 18/25)
+INFO  [13:58:38.036] [mlr3] Applying learner 'classif.xgboost' on task 'train_task' (iter 19/25)
+INFO  [13:58:38.288] [mlr3] Applying learner 'classif.xgboost' on task 'train_task' (iter 20/25)
+INFO  [13:58:38.537] [mlr3] Applying learner 'classif.xgboost' on task 'train_task' (iter 21/25)
+INFO  [13:58:38.805] [mlr3] Applying learner 'classif.xgboost' on task 'train_task' (iter 22/25)
+INFO  [13:58:39.061] [mlr3] Applying learner 'classif.xgboost' on task 'train_task' (iter 23/25)
+INFO  [13:58:39.317] [mlr3] Applying learner 'classif.xgboost' on task 'train_task' (iter 24/25)
+INFO  [13:58:39.569] [mlr3] Applying learner 'classif.xgboost' on task 'train_task' (iter 25/25)
+INFO  [13:58:39.968] [mlr3] Applying learner 'classif.glmnet' on task 'train_task' (iter 1/25)
+INFO  [13:58:40.986] [mlr3] Applying learner 'classif.glmnet' on task 'train_task' (iter 2/25)
+INFO  [13:58:41.825] [mlr3] Applying learner 'classif.glmnet' on task 'train_task' (iter 3/25)
+INFO  [13:58:42.592] [mlr3] Applying learner 'classif.glmnet' on task 'train_task' (iter 4/25)
+INFO  [13:58:43.541] [mlr3] Applying learner 'classif.glmnet' on task 'train_task' (iter 5/25)
+INFO  [13:58:44.478] [mlr3] Applying learner 'classif.glmnet' on task 'train_task' (iter 6/25)
+INFO  [13:58:45.300] [mlr3] Applying learner 'classif.glmnet' on task 'train_task' (iter 7/25)
+INFO  [13:58:46.276] [mlr3] Applying learner 'classif.glmnet' on task 'train_task' (iter 8/25)
+INFO  [13:58:47.260] [mlr3] Applying learner 'classif.glmnet' on task 'train_task' (iter 9/25)
+INFO  [13:58:48.066] [mlr3] Applying learner 'classif.glmnet' on task 'train_task' (iter 10/25)
+INFO  [13:58:49.151] [mlr3] Applying learner 'classif.glmnet' on task 'train_task' (iter 11/25)
+INFO  [13:58:50.114] [mlr3] Applying learner 'classif.glmnet' on task 'train_task' (iter 12/25)
+INFO  [13:58:50.907] [mlr3] Applying learner 'classif.glmnet' on task 'train_task' (iter 13/25)
+INFO  [13:58:51.899] [mlr3] Applying learner 'classif.glmnet' on task 'train_task' (iter 14/25)
+INFO  [13:58:52.934] [mlr3] Applying learner 'classif.glmnet' on task 'train_task' (iter 15/25)
+INFO  [13:58:53.909] [mlr3] Applying learner 'classif.glmnet' on task 'train_task' (iter 16/25)
+INFO  [13:58:54.864] [mlr3] Applying learner 'classif.glmnet' on task 'train_task' (iter 17/25)
+INFO  [13:58:55.674] [mlr3] Applying learner 'classif.glmnet' on task 'train_task' (iter 18/25)
+INFO  [13:58:56.605] [mlr3] Applying learner 'classif.glmnet' on task 'train_task' (iter 19/25)
+INFO  [13:58:57.441] [mlr3] Applying learner 'classif.glmnet' on task 'train_task' (iter 20/25)
+INFO  [13:58:58.397] [mlr3] Applying learner 'classif.glmnet' on task 'train_task' (iter 21/25)
+INFO  [13:58:59.454] [mlr3] Applying learner 'classif.glmnet' on task 'train_task' (iter 22/25)
+INFO  [13:59:00.351] [mlr3] Applying learner 'classif.glmnet' on task 'train_task' (iter 23/25)
+INFO  [13:59:01.147] [mlr3] Applying learner 'classif.glmnet' on task 'train_task' (iter 24/25)
+INFO  [13:59:01.985] [mlr3] Applying learner 'classif.glmnet' on task 'train_task' (iter 25/25)
+INFO  [13:59:02.853] [mlr3] Applying learner 'classif.log_reg' on task 'train_task' (iter 1/25)
+INFO  [13:59:03.571] [mlr3] Applying learner 'classif.log_reg' on task 'train_task' (iter 2/25)
+INFO  [13:59:04.284] [mlr3] Applying learner 'classif.log_reg' on task 'train_task' (iter 3/25)
+INFO  [13:59:04.988] [mlr3] Applying learner 'classif.log_reg' on task 'train_task' (iter 4/25)
+INFO  [13:59:05.711] [mlr3] Applying learner 'classif.log_reg' on task 'train_task' (iter 5/25)
+INFO  [13:59:06.401] [mlr3] Applying learner 'classif.log_reg' on task 'train_task' (iter 6/25)
+INFO  [13:59:07.104] [mlr3] Applying learner 'classif.log_reg' on task 'train_task' (iter 7/25)
+INFO  [13:59:07.743] [mlr3] Applying learner 'classif.log_reg' on task 'train_task' (iter 8/25)
+INFO  [13:59:08.449] [mlr3] Applying learner 'classif.log_reg' on task 'train_task' (iter 9/25)
+INFO  [13:59:09.175] [mlr3] Applying learner 'classif.log_reg' on task 'train_task' (iter 10/25)
+INFO  [13:59:09.859] [mlr3] Applying learner 'classif.log_reg' on task 'train_task' (iter 11/25)
+INFO  [13:59:10.518] [mlr3] Applying learner 'classif.log_reg' on task 'train_task' (iter 12/25)
+INFO  [13:59:11.194] [mlr3] Applying learner 'classif.log_reg' on task 'train_task' (iter 13/25)
+INFO  [13:59:12.050] [mlr3] Applying learner 'classif.log_reg' on task 'train_task' (iter 14/25)
+INFO  [13:59:12.690] [mlr3] Applying learner 'classif.log_reg' on task 'train_task' (iter 15/25)
+INFO  [13:59:13.337] [mlr3] Applying learner 'classif.log_reg' on task 'train_task' (iter 16/25)
+INFO  [13:59:13.982] [mlr3] Applying learner 'classif.log_reg' on task 'train_task' (iter 17/25)
+INFO  [13:59:14.651] [mlr3] Applying learner 'classif.log_reg' on task 'train_task' (iter 18/25)
+INFO  [13:59:15.282] [mlr3] Applying learner 'classif.log_reg' on task 'train_task' (iter 19/25)
+INFO  [13:59:15.915] [mlr3] Applying learner 'classif.log_reg' on task 'train_task' (iter 20/25)
+INFO  [13:59:16.549] [mlr3] Applying learner 'classif.log_reg' on task 'train_task' (iter 21/25)
+INFO  [13:59:17.221] [mlr3] Applying learner 'classif.log_reg' on task 'train_task' (iter 22/25)
+INFO  [13:59:17.856] [mlr3] Applying learner 'classif.log_reg' on task 'train_task' (iter 23/25)
+INFO  [13:59:18.490] [mlr3] Applying learner 'classif.log_reg' on task 'train_task' (iter 24/25)
+INFO  [13:59:19.160] [mlr3] Applying learner 'classif.log_reg' on task 'train_task' (iter 25/25)
+INFO  [13:59:19.791] [mlr3] Applying learner 'classif.ranger' on task 'train_task' (iter 1/25)
+INFO  [13:59:45.862] [mlr3] Applying learner 'classif.ranger' on task 'train_task' (iter 2/25)
+INFO  [14:00:11.415] [mlr3] Applying learner 'classif.ranger' on task 'train_task' (iter 3/25)
+INFO  [14:00:36.976] [mlr3] Applying learner 'classif.ranger' on task 'train_task' (iter 4/25)
+INFO  [14:01:02.550] [mlr3] Applying learner 'classif.ranger' on task 'train_task' (iter 5/25)
+INFO  [14:01:28.199] [mlr3] Applying learner 'classif.ranger' on task 'train_task' (iter 6/25)
+INFO  [14:01:53.648] [mlr3] Applying learner 'classif.ranger' on task 'train_task' (iter 7/25)
+INFO  [14:02:19.933] [mlr3] Applying learner 'classif.ranger' on task 'train_task' (iter 8/25)
+INFO  [14:02:45.410] [mlr3] Applying learner 'classif.ranger' on task 'train_task' (iter 9/25)
+INFO  [14:03:10.837] [mlr3] Applying learner 'classif.ranger' on task 'train_task' (iter 10/25)
+INFO  [14:03:36.324] [mlr3] Applying learner 'classif.ranger' on task 'train_task' (iter 11/25)
+INFO  [14:04:02.272] [mlr3] Applying learner 'classif.ranger' on task 'train_task' (iter 12/25)
+INFO  [14:04:27.851] [mlr3] Applying learner 'classif.ranger' on task 'train_task' (iter 13/25)
+INFO  [14:04:54.702] [mlr3] Applying learner 'classif.ranger' on task 'train_task' (iter 14/25)
+INFO  [14:05:21.413] [mlr3] Applying learner 'classif.ranger' on task 'train_task' (iter 15/25)
+INFO  [14:05:46.335] [mlr3] Applying learner 'classif.ranger' on task 'train_task' (iter 16/25)
+INFO  [14:06:11.441] [mlr3] Applying learner 'classif.ranger' on task 'train_task' (iter 17/25)
+INFO  [14:06:36.356] [mlr3] Applying learner 'classif.ranger' on task 'train_task' (iter 18/25)
+INFO  [14:07:01.493] [mlr3] Applying learner 'classif.ranger' on task 'train_task' (iter 19/25)
+INFO  [14:07:26.648] [mlr3] Applying learner 'classif.ranger' on task 'train_task' (iter 20/25)
+INFO  [14:07:51.523] [mlr3] Applying learner 'classif.ranger' on task 'train_task' (iter 21/25)
+INFO  [14:08:16.458] [mlr3] Applying learner 'classif.ranger' on task 'train_task' (iter 22/25)
+INFO  [14:08:41.893] [mlr3] Applying learner 'classif.ranger' on task 'train_task' (iter 23/25)
+INFO  [14:09:07.206] [mlr3] Applying learner 'classif.ranger' on task 'train_task' (iter 24/25)
+INFO  [14:09:32.619] [mlr3] Applying learner 'classif.ranger' on task 'train_task' (iter 25/25)
+INFO  [14:09:58.028] [mlr3] Applying learner 'classif.nnet' on task 'train_task' (iter 1/25)
+# weights:  172
+initial  value 26160.533790 
+final  value 23753.574156 
+converged
+INFO  [14:09:58.253] [mlr3] Applying learner 'classif.nnet' on task 'train_task' (iter 2/25)
+# weights:  172
+initial  value 36234.232706 
+final  value 23813.328342 
+converged
+INFO  [14:09:58.508] [mlr3] Applying learner 'classif.nnet' on task 'train_task' (iter 3/25)
+# weights:  172
+initial  value 24075.673238 
+final  value 23795.544228 
+converged
+INFO  [14:09:58.817] [mlr3] Applying learner 'classif.nnet' on task 'train_task' (iter 4/25)
+# weights:  172
+initial  value 24327.182410 
+iter  10 value 23370.236866
+iter  20 value 22815.235068
+iter  30 value 22445.861242
+iter  40 value 22254.580363
+iter  50 value 22121.192372
+iter  60 value 21966.465915
+iter  70 value 21413.699961
+iter  80 value 21188.161876
+iter  90 value 21084.314808
+iter 100 value 20967.119650
+final  value 20967.119650 
+stopped after 100 iterations
+INFO  [14:10:01.677] [mlr3] Applying learner 'classif.nnet' on task 'train_task' (iter 5/25)
+# weights:  172
+initial  value 24381.099531 
+final  value 23809.441499 
+converged
+INFO  [14:10:01.913] [mlr3] Applying learner 'classif.nnet' on task 'train_task' (iter 6/25)
+# weights:  172
+initial  value 24477.057327 
+final  value 23801.639153 
+converged
+INFO  [14:10:02.244] [mlr3] Applying learner 'classif.nnet' on task 'train_task' (iter 7/25)
+# weights:  172
+initial  value 24479.735034 
+final  value 23784.163686 
+converged
+INFO  [14:10:02.635] [mlr3] Applying learner 'classif.nnet' on task 'train_task' (iter 8/25)
+# weights:  172
+initial  value 24460.641531 
+final  value 23788.550265 
+converged
+INFO  [14:10:02.984] [mlr3] Applying learner 'classif.nnet' on task 'train_task' (iter 9/25)
+# weights:  172
+initial  value 25129.560779 
+final  value 23785.041947 
+converged
+INFO  [14:10:03.242] [mlr3] Applying learner 'classif.nnet' on task 'train_task' (iter 10/25)
+# weights:  172
+initial  value 24938.903957 
+iter  10 value 23792.654498
+iter  20 value 23782.334626
+iter  30 value 23775.515832
+iter  40 value 23774.037304
+iter  50 value 23770.728438
+iter  60 value 23768.566340
+iter  70 value 23767.497153
+iter  80 value 23767.045094
+iter  90 value 23766.752094
+iter 100 value 23766.109515
+final  value 23766.109515 
+stopped after 100 iterations
+INFO  [14:10:05.960] [mlr3] Applying learner 'classif.nnet' on task 'train_task' (iter 11/25)
+# weights:  172
+initial  value 24054.037044 
+final  value 23820.640208 
+converged
+INFO  [14:10:06.288] [mlr3] Applying learner 'classif.nnet' on task 'train_task' (iter 12/25)
+# weights:  172
+initial  value 24763.184041 
+iter  10 value 23706.878460
+iter  20 value 23586.321210
+iter  30 value 23377.609629
+iter  40 value 23044.229953
+iter  50 value 22839.870737
+iter  60 value 22765.509886
+iter  70 value 22702.448368
+iter  80 value 22683.305852
+iter  90 value 22668.209458
+iter 100 value 22661.366946
+final  value 22661.366946 
+stopped after 100 iterations
+INFO  [14:10:08.762] [mlr3] Applying learner 'classif.nnet' on task 'train_task' (iter 13/25)
+# weights:  172
+initial  value 28166.299093 
+final  value 23802.507968 
+converged
+INFO  [14:10:09.140] [mlr3] Applying learner 'classif.nnet' on task 'train_task' (iter 14/25)
+# weights:  172
+initial  value 33757.420057 
+final  value 23790.739130 
+converged
+INFO  [14:10:09.487] [mlr3] Applying learner 'classif.nnet' on task 'train_task' (iter 15/25)
+# weights:  172
+initial  value 24394.599585 
+final  value 23768.274166 
+converged
+INFO  [14:10:09.724] [mlr3] Applying learner 'classif.nnet' on task 'train_task' (iter 16/25)
+# weights:  172
+initial  value 23807.079681 
+final  value 23777.120588 
+converged
+INFO  [14:10:09.998] [mlr3] Applying learner 'classif.nnet' on task 'train_task' (iter 17/25)
+# weights:  172
+initial  value 23901.613167 
+final  value 23801.204634 
+converged
+INFO  [14:10:10.372] [mlr3] Applying learner 'classif.nnet' on task 'train_task' (iter 18/25)
+# weights:  172
+initial  value 28082.602788 
+final  value 23787.235531 
+converged
+INFO  [14:10:10.606] [mlr3] Applying learner 'classif.nnet' on task 'train_task' (iter 19/25)
+# weights:  172
+initial  value 28218.205495 
+final  value 23795.980347 
+converged
+INFO  [14:10:10.921] [mlr3] Applying learner 'classif.nnet' on task 'train_task' (iter 20/25)
+# weights:  172
+initial  value 25807.981021 
+final  value 23792.051025 
+converged
+INFO  [14:10:11.329] [mlr3] Applying learner 'classif.nnet' on task 'train_task' (iter 21/25)
+# weights:  172
+initial  value 27329.981074 
+final  value 23781.526070 
+converged
+INFO  [14:10:11.609] [mlr3] Applying learner 'classif.nnet' on task 'train_task' (iter 22/25)
+# weights:  172
+initial  value 26193.899541 
+final  value 23782.845415 
+converged
+INFO  [14:10:11.865] [mlr3] Applying learner 'classif.nnet' on task 'train_task' (iter 23/25)
+# weights:  172
+initial  value 26324.431324 
+final  value 23799.029793 
+converged
+INFO  [14:10:12.171] [mlr3] Applying learner 'classif.nnet' on task 'train_task' (iter 24/25)
+# weights:  172
+initial  value 23989.983376 
+final  value 23808.576460 
+converged
+INFO  [14:10:12.461] [mlr3] Applying learner 'classif.nnet' on task 'train_task' (iter 25/25)
+# weights:  172
+initial  value 25445.780676 
+iter  10 value 23738.182253
+iter  20 value 23528.556769
+iter  30 value 23233.485837
+iter  40 value 23093.334890
+iter  50 value 22999.215733
+iter  60 value 22871.421685
+iter  70 value 22843.382172
+iter  80 value 22822.334562
+iter  90 value 22816.820257
+iter 100 value 22813.232246
+final  value 22813.232246 
+stopped after 100 iterations
+INFO  [14:10:14.846] [mlr3] Finished benchmark</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>bmrdt <span class="ot">&lt;-</span> <span class="fu">as.data.table</span>(bmr)</span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Compare models</span></span>
+<span id="cb42-4"><a href="#cb42-4" aria-hidden="true" tabindex="-1"></a><span class="fu">autoplot</span>(bmr, <span class="at">measure =</span> <span class="fu">msr</span>(<span class="st">"classif.fpr"</span>)) <span class="sc">+</span></span>
+<span id="cb42-5"><a href="#cb42-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">autoplot</span>(bmr, <span class="at">measure =</span> <span class="fu">msr</span>(<span class="st">"classif.auc"</span>)) <span class="sc">+</span></span>
+<span id="cb42-6"><a href="#cb42-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">autoplot</span>(bmr, <span class="at">measure =</span> <span class="fu">msr</span>(<span class="st">"classif.acc"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="trial_weaners_files/figure-html/ML_approaches-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a>p_roc_prc <span class="ot">&lt;-</span> <span class="fu">autoplot</span>(bmr, <span class="at">type =</span> <span class="st">"roc"</span>) <span class="sc">+</span> <span class="fu">autoplot</span>(bmr, <span class="at">type =</span> <span class="st">"prc"</span>) <span class="sc">+</span></span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">plot_layout</span>(<span class="at">guides =</span> <span class="st">"collect"</span>)</span>
+<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a>p_roc_prc</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="trial_weaners_files/figure-html/ML_approaches-2.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Train and generate predictions</span></span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>trained_models <span class="ot">&lt;-</span> <span class="fu">lapply</span>(learners, </span>
+<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>                         <span class="cf">function</span>(learner) <span class="fu">train_and_evaluate</span>(learner, train_task, test_task))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># weights:  172
+initial  value 37639.332542 
+final  value 29738.423907 
+converged</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Extract the trained learners and test accuracies</span></span>
+<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a>learners_trained <span class="ot">&lt;-</span> <span class="fu">lapply</span>(trained_models, <span class="st">`</span><span class="at">[[</span><span class="st">`</span>, <span class="st">"learner"</span>)</span>
+<span id="cb46-3"><a href="#cb46-3" aria-hidden="true" tabindex="-1"></a>test_accuracies <span class="ot">&lt;-</span> <span class="fu">sapply</span>(trained_models, <span class="st">`</span><span class="at">[[</span><span class="st">`</span>, <span class="st">"test_accuracy"</span>)</span>
+<span id="cb46-4"><a href="#cb46-4" aria-hidden="true" tabindex="-1"></a>test_preds <span class="ot">&lt;-</span> <span class="fu">lapply</span>(trained_models, <span class="st">`</span><span class="at">[[</span><span class="st">`</span>, <span class="st">"prediction_test"</span>)</span>
+<span id="cb46-5"><a href="#cb46-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb46-6"><a href="#cb46-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate all metrics and confusion matrix</span></span>
+<span id="cb46-7"><a href="#cb46-7" aria-hidden="true" tabindex="-1"></a>metrics_list <span class="ot">&lt;-</span> <span class="fu">lapply</span>(test_preds, calculate_metrics)</span>
+<span id="cb46-8"><a href="#cb46-8" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(metrics_list) <span class="ot">&lt;-</span>  <span class="fu">sapply</span>(learners, <span class="cf">function</span>(learner) learner<span class="sc">$</span>id)</span>
+<span id="cb46-9"><a href="#cb46-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb46-10"><a href="#cb46-10" aria-hidden="true" tabindex="-1"></a>confusion_mat_results <span class="ot">&lt;-</span> <span class="fu">lapply</span>(test_preds, <span class="cf">function</span>(x) {x<span class="sc">$</span>confusion})</span>
+<span id="cb46-11"><a href="#cb46-11" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(confusion_mat_results) <span class="ot">&lt;-</span>  <span class="fu">sapply</span>(learners, <span class="cf">function</span>(learner) learner<span class="sc">$</span>id)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="trial_weaners_files/figure-html/threshold_plots-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(future)</span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(mlr3tuningspaces)</span>
+<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a><span class="co"># select the multisession backend to use</span></span>
+<span id="cb47-5"><a href="#cb47-5" aria-hidden="true" tabindex="-1"></a>future<span class="sc">::</span><span class="fu">plan</span>(<span class="st">"multisession"</span>)</span>
+<span id="cb47-6"><a href="#cb47-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb47-7"><a href="#cb47-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Set tunning space</span></span>
+<span id="cb47-8"><a href="#cb47-8" aria-hidden="true" tabindex="-1"></a>lts_xgb <span class="ot">&lt;-</span> <span class="fu">lts</span>(<span class="st">"classif.xgboost.default"</span>)</span>
+<span id="cb47-9"><a href="#cb47-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb47-10"><a href="#cb47-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Set tuning params</span></span>
+<span id="cb47-11"><a href="#cb47-11" aria-hidden="true" tabindex="-1"></a>tnr_random <span class="ot">&lt;-</span> <span class="fu">tnr</span>(<span class="st">"random_search"</span>)</span>
+<span id="cb47-12"><a href="#cb47-12" aria-hidden="true" tabindex="-1"></a>rsmp_holdout <span class="ot">&lt;-</span> <span class="fu">rsmp</span>(<span class="st">"holdout"</span>, <span class="at">ratio =</span> <span class="fl">0.8</span>)</span>
+<span id="cb47-13"><a href="#cb47-13" aria-hidden="true" tabindex="-1"></a>trm_evals <span class="ot">&lt;-</span> <span class="fu">trm</span>(<span class="st">"evals"</span>, <span class="at">n_evals =</span> <span class="dv">20</span>)</span>
+<span id="cb47-14"><a href="#cb47-14" aria-hidden="true" tabindex="-1"></a>msr_fpr <span class="ot">&lt;-</span> <span class="fu">msr</span>(<span class="st">"classif.fpr"</span>)</span>
+<span id="cb47-15"><a href="#cb47-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb47-16"><a href="#cb47-16" aria-hidden="true" tabindex="-1"></a><span class="co"># Set model params to tune</span></span>
+<span id="cb47-17"><a href="#cb47-17" aria-hidden="true" tabindex="-1"></a>lrn_xgb <span class="ot">&lt;-</span> <span class="fu">lrn</span>(<span class="st">"classif.xgboost"</span>)</span>
+<span id="cb47-18"><a href="#cb47-18" aria-hidden="true" tabindex="-1"></a>lrn_xgb<span class="sc">$</span>param_set<span class="sc">$</span><span class="fu">set_values</span>(<span class="at">.values =</span> lts_xgb<span class="sc">$</span>values)</span>
+<span id="cb47-19"><a href="#cb47-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb47-20"><a href="#cb47-20" aria-hidden="true" tabindex="-1"></a><span class="co"># set threads for parallel compute</span></span>
+<span id="cb47-21"><a href="#cb47-21" aria-hidden="true" tabindex="-1"></a><span class="fu">set_threads</span>(lrn_xgb, parallel<span class="sc">::</span><span class="fu">detectCores</span>())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>&lt;LearnerClassifXgboost:classif.xgboost&gt;: Extreme Gradient Boosting
+* Model: -
+* Parameters: nrounds=&lt;RangeTuneToken&gt;, nthread=8, verbose=0,
+  early_stopping_set=none, eta=&lt;RangeTuneToken&gt;,
+  max_depth=&lt;RangeTuneToken&gt;, colsample_bytree=&lt;RangeTuneToken&gt;,
+  colsample_bylevel=&lt;RangeTuneToken&gt;, lambda=&lt;RangeTuneToken&gt;,
+  alpha=&lt;RangeTuneToken&gt;, subsample=&lt;RangeTuneToken&gt;
+* Packages: mlr3, mlr3learners, xgboost
+* Predict Types:  [response], prob
+* Feature Types: logical, integer, numeric
+* Properties: hotstart_forward, importance, missings, multiclass,
+  twoclass, weights</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb49"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Tuning without nested resampling</span></span>
+<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a>instance <span class="ot">&lt;-</span> <span class="fu">ti</span>(</span>
+<span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">task =</span> train_task,</span>
+<span id="cb49-4"><a href="#cb49-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">learner =</span> lrn_xgb,</span>
+<span id="cb49-5"><a href="#cb49-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">resampling =</span> rsmp_holdout,</span>
+<span id="cb49-6"><a href="#cb49-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">measures =</span> msr_fpr,</span>
+<span id="cb49-7"><a href="#cb49-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">terminator =</span> trm_evals</span>
+<span id="cb49-8"><a href="#cb49-8" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb49-9"><a href="#cb49-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb49-10"><a href="#cb49-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Optimise</span></span>
+<span id="cb49-11"><a href="#cb49-11" aria-hidden="true" tabindex="-1"></a>tuner <span class="ot">&lt;-</span> <span class="fu">tnr</span>(<span class="st">"random_search"</span>, <span class="at">batch_size =</span> <span class="dv">10</span>)</span>
+<span id="cb49-12"><a href="#cb49-12" aria-hidden="true" tabindex="-1"></a>tuner<span class="sc">$</span><span class="fu">optimize</span>(instance)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>INFO  [14:11:03.317] [bbotk] Starting to optimize 8 parameter(s) with '&lt;OptimizerRandomSearch&gt;' and '&lt;TerminatorEvals&gt; [n_evals=20, k=0]'
+INFO  [14:11:03.332] [bbotk] Evaluating 10 configuration(s)
+INFO  [14:11:03.338] [mlr3] Running benchmark with 10 resampling iterations
+INFO  [14:11:10.170] [mlr3] Applying learner 'classif.xgboost' on task 'train_task' (iter 1/1)
+INFO  [14:11:17.304] [mlr3] Applying learner 'classif.xgboost' on task 'train_task' (iter 1/1)
+INFO  [14:11:24.741] [mlr3] Applying learner 'classif.xgboost' on task 'train_task' (iter 1/1)
+INFO  [14:11:32.708] [mlr3] Applying learner 'classif.xgboost' on task 'train_task' (iter 1/1)
+INFO  [14:11:41.300] [mlr3] Applying learner 'classif.xgboost' on task 'train_task' (iter 1/1)
+INFO  [14:11:49.821] [mlr3] Applying learner 'classif.xgboost' on task 'train_task' (iter 1/1)
+INFO  [14:11:59.022] [mlr3] Applying learner 'classif.xgboost' on task 'train_task' (iter 1/1)
+INFO  [14:12:08.153] [mlr3] Applying learner 'classif.xgboost' on task 'train_task' (iter 1/1)
+INFO  [14:12:27.954] [mlr3] Applying learner 'classif.xgboost' on task 'train_task' (iter 1/1)
+INFO  [14:12:48.472] [mlr3] Applying learner 'classif.xgboost' on task 'train_task' (iter 1/1)
+INFO  [14:16:48.295] [mlr3] Finished benchmark
+INFO  [14:16:48.386] [bbotk] Result of batch 1:
+INFO  [14:16:48.390] [bbotk]  nrounds       eta max_depth colsample_bytree colsample_bylevel     lambda
+INFO  [14:16:48.390] [bbotk]     4650 -8.042798         6        0.4952658         0.7335335 -3.1843424
+INFO  [14:16:48.390] [bbotk]     2135 -1.630043        18        0.2307003         0.4394234 -2.6994812
+INFO  [14:16:48.390] [bbotk]     3992 -8.814808         3        0.2467541         0.3178091  3.3239719
+INFO  [14:16:48.390] [bbotk]      237 -7.621131        11        0.8637438         0.4726694 -0.4164007
+INFO  [14:16:48.390] [bbotk]     3823 -3.791777        16        0.8340980         0.5128193 -3.4030503
+INFO  [14:16:48.390] [bbotk]     2261 -3.756638         6        0.1664282         0.5389633  0.5845025
+INFO  [14:16:48.390] [bbotk]     3458 -4.054035        12        0.5953778         0.1110957 -0.7724493
+INFO  [14:16:48.390] [bbotk]     1401 -2.529604        17        0.7053076         0.2525755 -3.6717644
+INFO  [14:16:48.390] [bbotk]     2689 -2.918530         5        0.9893239         0.2612165  0.1420392
+INFO  [14:16:48.390] [bbotk]      458 -1.683570        12        0.4161444         0.5254397  4.3984746
+INFO  [14:16:48.390] [bbotk]       alpha subsample classif.fpr warnings errors runtime_learners
+INFO  [14:16:48.390] [bbotk]  -4.8129369 0.3732266 0.064684015        0      0          200.478
+INFO  [14:16:48.390] [bbotk]   3.0344881 0.2921128 0.005204461        0      0           24.128
+INFO  [14:16:48.390] [bbotk]   2.0426294 0.3943109 0.045539033        0      0           37.795
+INFO  [14:16:48.390] [bbotk]  -2.3189091 0.2276217 0.008550186        0      0           17.545
+INFO  [14:16:48.390] [bbotk]  -0.2606168 0.8010782 0.005762082        0      0          306.180
+INFO  [14:16:48.390] [bbotk]  -3.8515567 0.8407879 0.005018587        0      0           40.356
+INFO  [14:16:48.390] [bbotk]  -5.0872715 0.6341301 0.005204461        0      0           83.976
+INFO  [14:16:48.390] [bbotk]   1.7127754 0.6252338 0.005390335        0      0           49.106
+INFO  [14:16:48.390] [bbotk]   4.1737976 0.5442485 0.011895911        0      0           46.521
+INFO  [14:16:48.390] [bbotk]   3.5405109 0.2580635 0.008921933        0      0           13.401
+INFO  [14:16:48.390] [bbotk]                                 uhash
+INFO  [14:16:48.390] [bbotk]  22a11e8e-7496-4826-af63-2065c528ff27
+INFO  [14:16:48.390] [bbotk]  893db9ff-fafa-472e-b75e-c69eef0f89c2
+INFO  [14:16:48.390] [bbotk]  87aed12c-3554-48d5-b1ff-84562124c4f7
+INFO  [14:16:48.390] [bbotk]  ff35f8aa-d300-4e56-895f-9b4e69ffb3d7
+INFO  [14:16:48.390] [bbotk]  c4cfae69-8df3-4dae-bc5b-a4be06b01231
+INFO  [14:16:48.390] [bbotk]  209f5ba7-9ea9-496a-87fe-73932c12a0a4
+INFO  [14:16:48.390] [bbotk]  1a0f6d67-bfc9-4b79-8373-4c5f21d9bc9f
+INFO  [14:16:48.390] [bbotk]  1033c366-d711-4c8c-9d55-c662a5a8bf78
+INFO  [14:16:48.390] [bbotk]  d4051c86-2751-4124-89d6-7242d758b284
+INFO  [14:16:48.390] [bbotk]  cb7fe4d6-32e1-4559-bbb9-43fb2f11aba3
+INFO  [14:16:48.395] [bbotk] Evaluating 10 configuration(s)
+INFO  [14:16:48.402] [mlr3] Running benchmark with 10 resampling iterations
+INFO  [14:16:55.501] [mlr3] Applying learner 'classif.xgboost' on task 'train_task' (iter 1/1)
+INFO  [14:17:02.609] [mlr3] Applying learner 'classif.xgboost' on task 'train_task' (iter 1/1)
+INFO  [14:17:09.206] [mlr3] Applying learner 'classif.xgboost' on task 'train_task' (iter 1/1)
+INFO  [14:17:22.310] [mlr3] Applying learner 'classif.xgboost' on task 'train_task' (iter 1/1)
+INFO  [14:17:36.376] [mlr3] Applying learner 'classif.xgboost' on task 'train_task' (iter 1/1)
+INFO  [14:17:55.129] [mlr3] Applying learner 'classif.xgboost' on task 'train_task' (iter 1/1)
+INFO  [14:18:10.156] [mlr3] Applying learner 'classif.xgboost' on task 'train_task' (iter 1/1)
+INFO  [14:18:24.091] [mlr3] Applying learner 'classif.xgboost' on task 'train_task' (iter 1/1)
+INFO  [14:18:42.000] [mlr3] Applying learner 'classif.xgboost' on task 'train_task' (iter 1/1)
+INFO  [14:19:01.480] [mlr3] Applying learner 'classif.xgboost' on task 'train_task' (iter 1/1)
+INFO  [14:23:40.105] [mlr3] Finished benchmark
+INFO  [14:23:40.186] [bbotk] Result of batch 2:
+INFO  [14:23:40.189] [bbotk]  nrounds        eta max_depth colsample_bytree colsample_bylevel     lambda
+INFO  [14:23:40.189] [bbotk]      628 -3.0029040        19        0.1128039         0.3537312  0.0665556
+INFO  [14:23:40.189] [bbotk]      804 -5.4974585        13        0.3691905         0.7983182  2.0870069
+INFO  [14:23:40.189] [bbotk]     2430 -8.6715360        10        0.1143701         0.4702404 -3.8907120
+INFO  [14:23:40.189] [bbotk]      527 -3.4593246         2        0.9825923         0.1724051  5.8811286
+INFO  [14:23:40.189] [bbotk]     1679 -0.4269927        14        0.9895801         0.9821893  6.7694992
+INFO  [14:23:40.189] [bbotk]      327 -4.1086745         7        0.2579659         0.9285638  4.3033533
+INFO  [14:23:40.189] [bbotk]     4673 -1.6148766         5        0.5824737         0.3202261 -0.9857452
+INFO  [14:23:40.189] [bbotk]     1524 -5.1894616        16        0.4371796         0.2651561  6.4414898
+INFO  [14:23:40.189] [bbotk]     3938 -0.1219051        15        0.2465401         0.7957674 -1.7409923
+INFO  [14:23:40.189] [bbotk]     3382 -5.8032718         8        0.3989640         0.3280533 -4.7527147
+INFO  [14:23:40.189] [bbotk]       alpha subsample classif.fpr warnings errors runtime_learners
+INFO  [14:23:40.189] [bbotk]   0.5179328 0.6936807 0.005204461        0      0           13.905
+INFO  [14:23:40.189] [bbotk]   1.2901463 0.6205325 0.002788104        0      0           70.359
+INFO  [14:23:40.189] [bbotk]  -6.1196861 0.1898253 0.009851301        0      0           31.986
+INFO  [14:23:40.189] [bbotk]  -2.2450286 0.8150170 0.121375465        0      0            5.528
+INFO  [14:23:40.189] [bbotk]  -2.6182227 0.5738843 0.005390335        0      0          363.629
+INFO  [14:23:40.189] [bbotk]   2.9492540 0.6012626 0.037360595        0      0           13.563
+INFO  [14:23:40.189] [bbotk]  -0.9088040 0.9780807 0.005204461        0      0           99.603
+INFO  [14:23:40.189] [bbotk]   3.5421022 0.8046173 0.038475836        0      0           72.229
+INFO  [14:23:40.189] [bbotk]  -5.9222074 0.8817109 0.065241636        0      0          162.947
+INFO  [14:23:40.189] [bbotk]  -0.6169418 0.8135984 0.005390335        0      0           86.930
+INFO  [14:23:40.189] [bbotk]                                 uhash
+INFO  [14:23:40.189] [bbotk]  963b8f82-0ae4-4dae-a4bd-13875b0254c9
+INFO  [14:23:40.189] [bbotk]  f039a266-c44d-4883-8f61-c368b9a7bb37
+INFO  [14:23:40.189] [bbotk]  d7ec2fb7-3d37-418b-a048-eca8291f995c
+INFO  [14:23:40.189] [bbotk]  77ed7668-4907-4f33-9332-270c3f7f6896
+INFO  [14:23:40.189] [bbotk]  00b81898-5a54-4aad-87a6-2524859ce032
+INFO  [14:23:40.189] [bbotk]  6820017b-c945-4b2c-8da0-3fb98b84dd39
+INFO  [14:23:40.189] [bbotk]  17ce0ce5-2bd1-4f9b-b35f-7ebbb0d129cd
+INFO  [14:23:40.189] [bbotk]  3607e09a-524f-4d21-a708-f9899ee76f58
+INFO  [14:23:40.189] [bbotk]  7258881d-b390-409c-ad59-2424bc64b229
+INFO  [14:23:40.189] [bbotk]  b6ea23a5-c989-449a-8f4b-1d1f047fe1a1
+INFO  [14:23:40.197] [bbotk] Finished optimizing after 20 evaluation(s)
+INFO  [14:23:40.197] [bbotk] Result:
+INFO  [14:23:40.199] [bbotk]  nrounds       eta max_depth colsample_bytree colsample_bylevel   lambda
+INFO  [14:23:40.199] [bbotk]    &lt;int&gt;     &lt;num&gt;     &lt;int&gt;            &lt;num&gt;             &lt;num&gt;    &lt;num&gt;
+INFO  [14:23:40.199] [bbotk]      804 -5.497458        13        0.3691905         0.7983182 2.087007
+INFO  [14:23:40.199] [bbotk]     alpha subsample learner_param_vals  x_domain classif.fpr
+INFO  [14:23:40.199] [bbotk]     &lt;num&gt;     &lt;num&gt;             &lt;list&gt;    &lt;list&gt;       &lt;num&gt;
+INFO  [14:23:40.199] [bbotk]  1.290146 0.6205325         &lt;list[11]&gt; &lt;list[8]&gt; 0.002788104</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   nrounds       eta max_depth colsample_bytree colsample_bylevel   lambda
+     &lt;int&gt;     &lt;num&gt;     &lt;int&gt;            &lt;num&gt;             &lt;num&gt;    &lt;num&gt;
+1:     804 -5.497458        13        0.3691905         0.7983182 2.087007
+      alpha subsample learner_param_vals  x_domain classif.fpr
+      &lt;num&gt;     &lt;num&gt;             &lt;list&gt;    &lt;list&gt;       &lt;num&gt;
+1: 1.290146 0.6205325         &lt;list[11]&gt; &lt;list[8]&gt; 0.002788104</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb52"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Extract metric</span></span>
+<span id="cb52-2"><a href="#cb52-2" aria-hidden="true" tabindex="-1"></a>insample <span class="ot">&lt;-</span> instance<span class="sc">$</span>result_y</span>
+<span id="cb52-3"><a href="#cb52-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb52-4"><a href="#cb52-4" aria-hidden="true" tabindex="-1"></a><span class="co"># </span><span class="al">TODO</span></span>
+<span id="cb52-5"><a href="#cb52-5" aria-hidden="true" tabindex="-1"></a><span class="co"># # Tuning with nested resampling</span></span>
+<span id="cb52-6"><a href="#cb52-6" aria-hidden="true" tabindex="-1"></a><span class="co"># at &lt;- auto_tuner(</span></span>
+<span id="cb52-7"><a href="#cb52-7" aria-hidden="true" tabindex="-1"></a><span class="co">#   tuner = tnr_random,</span></span>
+<span id="cb52-8"><a href="#cb52-8" aria-hidden="true" tabindex="-1"></a><span class="co">#   learner = lrn_xgb,</span></span>
+<span id="cb52-9"><a href="#cb52-9" aria-hidden="true" tabindex="-1"></a><span class="co">#   resampling = rsmp_holdout,</span></span>
+<span id="cb52-10"><a href="#cb52-10" aria-hidden="true" tabindex="-1"></a><span class="co">#   measure = msr_fpr,</span></span>
+<span id="cb52-11"><a href="#cb52-11" aria-hidden="true" tabindex="-1"></a><span class="co">#   terminator = trm_evals</span></span>
+<span id="cb52-12"><a href="#cb52-12" aria-hidden="true" tabindex="-1"></a><span class="co"># )</span></span>
+<span id="cb52-13"><a href="#cb52-13" aria-hidden="true" tabindex="-1"></a><span class="co">#</span></span>
+<span id="cb52-14"><a href="#cb52-14" aria-hidden="true" tabindex="-1"></a><span class="co"># rsmp_cv5 &lt;- rsmp("repeated_cv", folds = 5, repeats = 3)</span></span>
+<span id="cb52-15"><a href="#cb52-15" aria-hidden="true" tabindex="-1"></a><span class="co"># outsample &lt;- resample(train_task, at, rsmp_cv5)$aggregate()</span></span>
+<span id="cb52-16"><a href="#cb52-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb52-17"><a href="#cb52-17" aria-hidden="true" tabindex="-1"></a><span class="co"># Tuned model</span></span>
+<span id="cb52-18"><a href="#cb52-18" aria-hidden="true" tabindex="-1"></a>lrn_xgboost_tuned <span class="ot">&lt;-</span> <span class="fu">lrn</span>(<span class="st">"classif.xgboost"</span>, </span>
+<span id="cb52-19"><a href="#cb52-19" aria-hidden="true" tabindex="-1"></a>                         <span class="at">predict_type =</span> <span class="st">"prob"</span>)</span>
+<span id="cb52-20"><a href="#cb52-20" aria-hidden="true" tabindex="-1"></a>lrn_xgboost_tuned<span class="sc">$</span>param_set<span class="sc">$</span><span class="fu">set_values</span>(</span>
+<span id="cb52-21"><a href="#cb52-21" aria-hidden="true" tabindex="-1"></a>  <span class="at">.values =</span> instance<span class="sc">$</span>result_learner_param_vals)</span>
+<span id="cb52-22"><a href="#cb52-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb52-23"><a href="#cb52-23" aria-hidden="true" tabindex="-1"></a>generalisation <span class="ot">&lt;-</span> </span>
+<span id="cb52-24"><a href="#cb52-24" aria-hidden="true" tabindex="-1"></a>  lrn_xgboost_tuned<span class="sc">$</span><span class="fu">train</span>(train_task)<span class="sc">$</span><span class="fu">predict</span>(test_task)<span class="sc">$</span><span class="fu">score</span>(msr_fpr)</span>
+<span id="cb52-25"><a href="#cb52-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb52-26"><a href="#cb52-26" aria-hidden="true" tabindex="-1"></a><span class="co"># Close parallel multisession</span></span>
+<span id="cb52-27"><a href="#cb52-27" aria-hidden="true" tabindex="-1"></a>future<span class="sc">::</span><span class="fu">plan</span>(sequential)</span>
+<span id="cb52-28"><a href="#cb52-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb52-29"><a href="#cb52-29" aria-hidden="true" tabindex="-1"></a><span class="co"># Extract prediction and check metrics</span></span>
+<span id="cb52-30"><a href="#cb52-30" aria-hidden="true" tabindex="-1"></a>prediction_tuned <span class="ot">&lt;-</span> lrn_xgboost_tuned<span class="sc">$</span><span class="fu">predict</span>(test_task)</span>
+<span id="cb52-31"><a href="#cb52-31" aria-hidden="true" tabindex="-1"></a>lrn_xgboost_tuned<span class="sc">$</span><span class="fu">importance</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  Rolling_min_48h   Rolling_max_30h             trend   Rolling_max_48h 
+     9.243550e-02      7.943699e-02      7.754425e-02      7.276092e-02 
+  Rolling_min_30h   Rolling_max_24h   Rolling_min_24h Rolling_range_48h 
+     6.766060e-02      6.664338e-02      6.656385e-02      6.401358e-02 
+  Rolling_Avg_48h Rolling_range_24h    Rolling_SD_48h Rolling_range_30h 
+     4.897572e-02      4.152191e-02      4.051078e-02      3.637106e-02 
+  Rolling_Avg_24h   Rolling_Avg_30h   Rolling_max_12h    Rolling_SD_30h 
+     3.291308e-02      3.118206e-02      2.790780e-02      2.321522e-02 
+  Rolling_min_12h    Rolling_SD_24h    Rolling_max_6h Rolling_range_12h 
+     2.216041e-02      2.166978e-02      1.212154e-02      1.201276e-02 
+   Rolling_min_6h   Rolling_Avg_12h    Rolling_SD_12h  Rolling_range_6h 
+     8.715488e-03      7.794072e-03      6.661323e-03      6.188918e-03 
+   Rolling_max_3h    Rolling_Avg_6h    Rolling_min_3h     Rolling_SD_6h 
+     4.582836e-03      4.375338e-03      4.067230e-03      3.742867e-03 
+           season    Rolling_Avg_3h  Rolling_range_3h     Rolling_SD_3h 
+     3.499313e-03      2.700261e-03      2.203794e-03      1.385324e-03 
+     Lag_Temp_48h         remainder     Temp_Diff_48h      Lag_Temp_24h 
+     8.328822e-04      4.809591e-04      4.169814e-04      3.963136e-04 
+    Temp_Diff_30h    Temp_Ratio_12h      Lag_Temp_30h    Temp_Ratio_24h 
+     3.730248e-04      3.636391e-04      3.393390e-04      3.337143e-04 
+   Temp_Ratio_48h     Temp_Diff_12h      Temp_Diff_6h     Temp_Ratio_6h 
+     3.221382e-04      3.048555e-04      2.874175e-04      2.851180e-04 
+   Temp_Ratio_30h     Temp_Diff_24h      Lag_Temp_12h     Temp_Ratio_3h 
+     2.732238e-04      2.665122e-04      2.313552e-04      2.089105e-04 
+     Temp_Diff_3h       Lag_Temp_6h       Lag_Temp_3h       class_watch 
+     2.041528e-04      1.870860e-04      1.322314e-04      1.312168e-04 
+     class_normal        class_sick     class_optimal 
+     8.659819e-05      2.231279e-06      2.151527e-06 </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb54"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot_var_importance</span>(lrn_xgboost_tuned<span class="sc">$</span><span class="fu">importance</span>()) <span class="sc">+</span> <span class="fu">ggtitle</span>(<span class="st">"Variable importance - tuned xgboost"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="trial_weaners_files/figure-html/xgb_tuning-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb55"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a>prediction_tuned<span class="sc">$</span><span class="fu">score</span>(<span class="at">measure =</span> eval_metrics) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>        classif.acc         classif.auc      classif.recall classif.sensitivity 
+          0.6515269           0.5222223           0.2268690           0.2268690 
+classif.specificity         classif.fpr         classif.fnr         classif.tpr 
+          0.7515030           0.2484970           0.7731310           0.2268690 
+        classif.tnr          classif.ce   classif.precision 
+          0.7515030           0.3484731           0.1769120 </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb57"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a>prediction_tuned<span class="sc">$</span>confusion</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>        truth
+response    0    1
+       0  613 2852
+       1 2089 8625</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb59"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Check thresholds</span></span>
+<span id="cb59-2"><a href="#cb59-2" aria-hidden="true" tabindex="-1"></a><span class="fu">autoplot</span>(prediction_tuned, <span class="at">type =</span> <span class="st">"threshold"</span>, <span class="at">measure =</span> <span class="fu">msr</span>(<span class="st">"classif.fpr"</span>)) <span class="sc">+</span></span>
+<span id="cb59-3"><a href="#cb59-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">autoplot</span>(prediction_tuned, <span class="at">type =</span> <span class="st">"threshold"</span>, <span class="at">measure =</span> <span class="fu">msr</span>(<span class="st">"classif.acc"</span>)) <span class="sc">+</span> </span>
+<span id="cb59-4"><a href="#cb59-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggtitle</span>(<span class="st">"Threshold check - tuned xgboost"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="trial_weaners_files/figure-html/xgb_tuning-2.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb60"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Set prob threshold to reduce fpr without penalise acc/auc</span></span>
+<span id="cb60-2"><a href="#cb60-2" aria-hidden="true" tabindex="-1"></a>prediction_tuned<span class="sc">$</span><span class="fu">set_threshold</span>(<span class="fl">0.9</span>)</span>
+<span id="cb60-3"><a href="#cb60-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb60-4"><a href="#cb60-4" aria-hidden="true" tabindex="-1"></a>adjusted_prediction_evals <span class="ot">&lt;-</span> prediction_tuned<span class="sc">$</span><span class="fu">score</span>(<span class="at">measure =</span> eval_metrics)</span>
+<span id="cb60-5"><a href="#cb60-5" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(adjusted_prediction_evals)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>        classif.acc         classif.auc      classif.recall classif.sensitivity 
+          0.8094365           0.5222223           0.0000000           0.0000000 
+classif.specificity         classif.fpr         classif.fnr         classif.tpr 
+          1.0000000           0.0000000           1.0000000           0.0000000 
+        classif.tnr          classif.ce   classif.precision 
+          1.0000000           0.1905635                 NaN </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb62"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Recalculate metrics</span></span>
+<span id="cb62-2"><a href="#cb62-2" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(prediction_tuned<span class="sc">$</span>confusion)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>        truth
+response     0     1
+       0     0     0
+       1  2702 11477</code></pre>
+</div>
+</div>
+</section>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

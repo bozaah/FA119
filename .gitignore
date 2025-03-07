@@ -10,6 +10,7 @@ outputs/trial_weaners_files/
 outputs/trial_weaners_cache/
 
 # temp chunked data
+NR_analysis_files/
 data/trial_data_chunked/
 data/3ps_nursery_room1/*
 data/trial_data_chunked_NR6/

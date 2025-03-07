@@ -1,0 +1,774 @@
+---
+format:
+  html:
+    self-contained: true
+execute: 
+  cache: true
+---
+
+# 3Ps Ear temperature classification - ML Approach
+
+```{r, setup, echo=FALSE, warning=FALSE, message=FALSE}
+
+# Load libraries
+library(data.table)
+library(ggplot2)
+library(ggtext)
+library(patchwork)
+library(zoo)
+library(here)
+library(anomalize)
+library(future)
+
+# Source functions
+source(here::here("R/utils.R"))
+
+dt <-
+  as.data.table(
+    readxl::read_xlsx(file.path(here::here("data/Trial-1-3PS-Combined.xlsx")),
+                      sheet = "Combined Observations")
+  )
+
+# dt <-
+#   as.data.table(
+#     readxl::read_xlsx(file.path(here::here("data/trial_1_2_3PS_Combined.xlsx")),
+#                       sheet = "Combined Observations")
+#   )
+
+
+
+dt <- janitor::clean_names(dt)
+```
+
+## Health observations data
+
+```{r, clean_obs, echo=TRUE, warning=FALSE, message=FALSE}
+
+dt[, dmac := factor(dmac)]
+dt[, alert := factor(alert)]
+dt[, condition := factor(condition)]
+dt[, time := format(time, "%H:%M:%S")]
+dt[, pen_number := factor(round(as.numeric(pen_number), 0))]
+dt[, date := lubridate::ymd(date, tz = "Australia/Perth")]
+dt[, time_stamp := lubridate::ymd_hms(paste(date, time), tz = "Australia/Perth")]
+
+# logical columns to 0 or 1
+dt[, (names(dt)) := lapply(.SD, function(x) if (is.logical(x)) as.integer(x) else x)]
+
+# Turn condition into 0 and 1 (healthy or sick/dead)
+dt[, target := factor(ifelse(is.na(condition), 
+                             condition, 
+                             ifelse(condition %in% "Healthy",
+                                    0,
+                                    1)))]
+
+# one dmac 1A64 on 2024-10-28 10:28:30, was on NR3 and I moved it to NR1
+dt[which(dt$room == "NR3"), room := "NR1"]
+
+# Filter rows with missing dmac ids
+dt <- dt[!is.na(dmac)]
+dt <- dt[!is.na(condition)]
+dt <- dt[!is.na(bcs)]
+
+# Clean and convert bcs to numeric
+dt[, bcs := as.numeric(gsub("\\.+", ".", bcs))] # Removes extra dots, then converts to numeric
+
+# Convert any NAs introduced by the gsub to 0.5
+dt[is.na(bcs), bcs := 0.5]
+
+# Convert bcs to ordered factor
+dt[, bcs := factor(bcs, levels = sort(unique(bcs)), ordered = TRUE)]
+bcs_counts <- dt[, .(bcs_count = .N), by = .(bcs)]
+
+# Merge the counts back into the original data
+dt <- merge(dt, bcs_counts, by = c("bcs"), all.x = TRUE)
+
+# Remove duplicates
+dt <- dt[!duplicated(dt)]
+
+# Ensure data is sorted by dmac and timestamp for accurate cumulative calculations
+setorder(dt, time_stamp, dmac)
+
+# Extract dates with the temperature data in mind.
+unique_dates <- dt |> dplyr::pull(time_stamp)
+unique_dmac <- dt |> dplyr::pull(dmac)
+unique_ids_dates <- data.table(dmac = unique_dmac, time_stamp = unique_dates)
+
+# start and end info
+date_start <- min(dt$time_stamp)
+date_end <- max(dt$time_stamp)
+
+# Check RED alerts data
+# dt[grep("^RED", dt$alert)]
+
+## Cummulative alerts
+# Create a binary column indicating the presence of an alert
+dt[, alert_flag := as.integer(!is.na(alert) & alert %notin% c("None", "<NA>"))]
+
+# Calculate cumulative alerts for each dmac ID over time
+dt[, cumulative_alerts := cumsum(alert_flag), by = dmac]
+
+# Check data
+str(dt)
+# Hmisc::describe(dt)
+
+# Step 2: Ensure condition is a factor and in the right order
+health_dt <- dt[, condition := factor(condition, levels = c("Healthy", "Sick", "Dead"))]
+
+# Step 3: Define health indicator columns, adding `bcs`
+health_columns <- c("diarrhoea", "respiratory", "coughing", "neuro", "ataxia", 
+                    "paddling", "seizure", "nasal_disc", "lameness", 
+                    "number_swollen_joints", "left_front", "right_front", 
+                    "left_hind", "right_hind", "skin_lesion", "tail_bite",
+                    "abscess", "prolapse", "hernia", "bloating", 
+                    "hema_left", "hema_right", "treated_prev",
+                    "med1", "med2", "med3", "tosick", "fromsick", "euthanise", "cumulative_alerts")
+
+# Ensure all health_columns are numeric
+health_dt[, (health_columns) := lapply(.SD, as.numeric), .SDcols = health_columns]
+```
+
+The health observation is data between `r format(date_start, "%Y-%m-%d %H:%M:%S")` and `r format(date_end, "%Y-%m-%d %H:%M:%S")`.
+
+## Ear temperature data
+
+```{r, ear_temp, echo=TRUE, warning=FALSE, message=FALSE}
+## Load in temperature data from python extraction and analysis ----
+# List all .parquet files in the directory
+parquet_files <- list.files(here::here("data/trial_data_chunked"), pattern = "\\.parquet$", full.names = TRUE)
+
+# Read each file into a data.table and store in a list
+dt_list <- lapply(parquet_files, function(file) {
+  arrow::read_parquet(file)
+})
+
+# Combine all data.tables into one
+combined_dt <- rbindlist(dt_list, use.names = TRUE, fill = TRUE)
+
+# View the combined data.table
+print(combined_dt)
+
+# Add date and time columns
+combined_dt[, date := lubridate::as_date(timestamp)]
+combined_dt[, time := format(timestamp, "%H:%M:%S")]
+combined_dt[, doy := lubridate::yday(date)]
+combined_dt[, week := lubridate::week(date)]
+
+# extract last 4 digits to match dmac on focus health obs
+combined_dt[, dmac := factor(substring(animal_id, nchar(animal_id) - 3, nchar(animal_id)))]
+
+# Count the number of observations per animal_id
+observation_counts <- combined_dt[, .N, by = dmac]
+
+# Rename the count column for clarity
+setnames(observation_counts, "N", "observation_count")
+
+# View the result
+print(observation_counts)
+
+# plot
+setorder(observation_counts, -observation_count) # Descending order
+
+# Convert animal_id to a factor with levels ordered by observation_count
+observation_counts[, dmac := factor(dmac, levels = dmac)]
+
+# Plot using ggplot2
+p1 <- 
+  ggplot(subset(observation_counts, observation_count <= 2800), aes(x = dmac, y = observation_count)) +
+  geom_col(fill = "grey", alpha = 0.4) +
+  coord_flip() +
+  theme_light(base_size = 12) +
+  labs(name = "") # Optional, remove legend title 
+
+p2 <-
+  ggplot(subset(observation_counts, observation_count >= 3650), aes(x = dmac, y = observation_count)) +
+  geom_col(fill = "grey", alpha = 0.4) +
+  coord_flip() +
+  theme_light(base_size = 12) +
+  labs(name = "") # Optional, remove legend title
+
+p1 | p2
+
+# Extract dmac with >= 3650
+max_obs_tags <- as.character(dplyr::pull(subset(observation_counts, observation_count >= 4000), dmac))
+
+# Check one tag
+ggplot(subset(combined_dt, dmac %in% max_obs_tags), aes(x = timestamp, y = temperature)) +
+  geom_line() +
+  facet_wrap(. ~ dmac) + 
+  theme_light(base_size = 16)
+
+# Tag with more 
+```
+
+## Create temperature features
+
+```{r, features, warning=FALSE, message=FALSE}
+
+# Create features for
+feature_file_path <- here::here("data/trial_3Ps_tag_temp_with_features.parquet")
+
+if (file.exists(feature_file_path)) {
+  print("feature dataset exists.")
+  features_dt <- arrow::read_parquet(feature_file_path)
+} else {
+  print("Creating features dataset.")
+  features_dt <- create_features(combined_dt)
+}
+
+# Save current par settings
+original_par <- par()
+# Adjust margins to create space for the legend outside the plotting area
+par(mar = c(5, 4, 4, 8)) # Increase the right margin to accommodate the legend
+
+with(subset(features_dt, animal_id == "FFDB460D9AD5" & doy %in% c(278:290)),
+     plot(temperature ~ timestamp, type = "l", col = "grey", lwd = 1.6, xlab = "", ylab = "\nTag temperature (ºC)"))
+with(subset(features_dt, animal_id == "FFDB460D9AD5" & doy %in% c(278:290)),
+     lines(Rolling_Avg_3h ~ timestamp, col = "orange", lwd = 4))
+with(subset(features_dt, animal_id == "FFDB460D9AD5" & doy %in% c(278:290)),
+     lines(Rolling_Avg_6h ~ timestamp, col = "forestgreen", lwd = 4))
+with(subset(features_dt, animal_id == "FFDB460D9AD5" & doy %in% c(278:290)),
+     lines(Rolling_Avg_12h ~ timestamp, col = "darkblue", lwd = 4))
+with(subset(features_dt, animal_id == "FFDB460D9AD5" & doy %in% c(278:290)),
+     lines(Rolling_Avg_24h ~ timestamp, col = "steelblue", lwd = 4))
+with(subset(features_dt, animal_id == "FFDB460D9AD5" & doy %in% c(278:290)),
+     lines(Rolling_Avg_30h ~ timestamp, col = "purple2", lwd = 4))
+with(subset(features_dt, animal_id == "FFDB460D9AD5" & doy %in% c(278:290)),
+     lines(Rolling_Avg_48h ~ timestamp, col = "firebrick", lwd = 4))
+title("Ear tag temperature (dmac 9AD5)")
+
+# Add the legend outside the plot
+legend("topright", inset = c(-0.2, 0), legend = c("Obs", "3h", "6h", "12h", "24h", "30h", "48h"),
+       col = c("grey", "orange", "forestgreen", "darkblue", "steelblue", "purple2", "firebrick"), 
+       lwd = rep(4, 7), xpd = TRUE, title = "Rolling mean")
+
+# Restore original par settings
+par(original_par)
+
+# Apply the feature calculation to each animal
+features_daily <- combined_dt[, calculate_features(.SD), by = .(animal_id, doy)]
+features_weeky <- combined_dt[, calculate_features(.SD), by = .(animal_id, week)]
+
+features_daily[, sd_group := ifelse(sd_temp >= 0.8, "high SD", "low SD")]
+features_weeky[, sd_group := ifelse(sd_temp >= 0.8, "high SD", "low SD")]
+
+ggplot(na.omit(features_daily), aes(x = sd_temp, fill = sd_group), group = sd_group) +
+  scale_fill_viridis_d(option = "D", name = "Rolling mean") +
+  labs(
+    title = "Ear tag temperature distribution (daily summary)",
+    x = "\nTemperature (ºC)",
+    y = "Density\n"
+  ) +
+  geom_density(alpha = .65) +
+  theme_light(base_size = 16)
+
+# Create a group for high and low SS (only towards the end)
+high_sd_tags <- dplyr::pull(subset(features_daily, sd_group == "high SD"), animal_id) |> unique()
+low_sd_tags <- dplyr::pull(subset(features_daily, sd_group == "low SD"), animal_id) |> unique()
+```
+
+## Time-series analysis
+
+```{r, ts_analysis, echo=TRUE, warning=FALSE, message=FALSE}
+# anomaly
+results <- features_dt |>
+  dplyr::group_by(animal_id) |>
+  time_decompose(temperature, method = "stl") |>
+  anomalize(remainder) |>
+  time_recompose() |>
+  as.data.table()
+
+# Add date and extract dmac from IDs
+results[, date := lubridate::as_date(timestamp)]
+results[, dmac := factor(substring(animal_id, nchar(animal_id) - 3, nchar(animal_id)))]
+
+# str(results)
+
+plot(ts(results[animal_id == sample(high_sd_tags, 1), .(observed, season, trend, remainder)]), 
+     main = "TS decomposition - High SD example", cex.lab = 1.3, cex.axis = 1.33)
+
+plot(ts(results[animal_id == sample(low_sd_tags, 1), .(observed, season, trend, remainder)]), 
+     main = "TS decomposition - Low SD example", cex.lab = 1.33, cex.axis = 1.33)
+
+# Create feature with ts series output
+results_ts_features <- create_features_ts(results)
+
+ggplot(results_ts_features, aes(x = remainder), group = anomaly) +
+  geom_density(aes(fill = anomaly), alpha = 0.4) +
+  scale_fill_viridis_d(option = "D", name = "Anomaly") +
+  theme_light(base_size = 16) +
+  labs(title = "10-min Temperature Pattern ", y = "Density", x = "TS Remainder")
+
+ggplot(results_ts_features, aes(x = season), group = anomaly) +
+  geom_density(aes(fill = anomaly), alpha = 0.4) +
+  scale_fill_viridis_d(option = "D", name = "Anomaly") +
+  theme_light(base_size = 16) +
+  labs(title = "10-min Temperature Pattern ", y = "Density", x = "TS Seasonality")
+
+ggplot(results_ts_features, aes(x = trend), group = anomaly) +
+  geom_density(aes(fill = anomaly), alpha = 0.4) +
+  scale_fill_viridis_d(option = "D", name = "Anomaly") +
+  theme_light(base_size = 16) +
+  labs(title = "10-min Temperature Pattern ", y = "Density", x = "TS Trend")
+
+# arrow::write_parquet(results_ts_features, "data/trial_3Ps_timeseries_anomaly_features_data.parquet")
+
+```
+
+## Combined health observation data with ear tag temperature data
+
+```{r, data_merge, echo=FALSE}
+# Select the three columns
+health_dt_subset <- health_dt[, .(dmac, date, condition)]
+merged_dt <- dplyr::left_join(results_ts_features, health_dt_subset, by = c("dmac", "date"))
+
+# initial da cleaning for modelling
+clean_dt <- merged_dt[which(!is.na(merged_dt$condition))]
+clean_dt <- clean_dt[which(!is.na(clean_dt$observed))]
+
+# clean_dt_feats <- clean_dt_feats[!is.na(clean_dt_feats$Temp_Diff_48h)]
+
+ggplot(clean_dt, aes(x = observed, fill = condition, group = condition)) +
+  scale_fill_viridis_d(option = "D", name = "Condition") +
+  geom_density(alpha = 0.53) +
+  theme_light(base_size = 16) +
+  labs(title = "10-min Temperature Pattern ", y = "Density", x = "Ear tag temperature")
+
+# check data
+str(clean_dt)
+
+# Remove tags labelled dead
+clean_dt <- subset(clean_dt, condition %in% c("Healthy", "Sick"))
+clean_dt[, target := ifelse(condition == "Healthy", 0, 1)]
+
+ggplot(clean_dt, aes(x = season)) +
+  geom_density(aes(fill = factor(target)), alpha = .7) +
+  scale_fill_viridis_d(option = "D", name = "Condition") +
+  theme_light(base_size = 16)
+
+# Check stats for each animal
+animal_id_summary <- calculate_stats_combined(clean_dt, "observed", "animal_id")
+```
+
+## Modelling - only temperature observations as training data
+
+```{r, toy_model, echo=TRUE, warning=FALSE, message=FALSE}
+
+library(mlr3)
+library(mlr3verse)
+library(mlr3tuning)
+library(mlr3learners)
+library(mlr3pipelines)
+library(mlr3viz)
+library(paradox)
+
+# Set theoretical limits for temperature
+# add temperature classes
+model_dt_full <- add_temperature_classes(clean_dt)
+
+# Hot-shot encode the class column
+model_dt_full <- one_hot_encode(model_dt_full, col = "class", drop_col = FALSE)
+
+# Transform binary target to factor
+model_dt_full[, target := factor(target)]
+
+ggplot(model_dt_full, aes(x = observed)) +
+  geom_density(aes(fill = factor(class)), alpha = .7) +
+  scale_fill_viridis_d(option = "D", name = "Condition") +
+  labs(title = "Tag temperature distribution by theorical limits", 
+       y = "Density\n", 
+       x = "\nEar tag temperature (°C)",
+       caption = "<b>Theoretical temperature limits</b><br>
+               Hypothermia critical (32 < T ≤ 35°C)<br>
+               Hypothermia severe (T ≤ 32°C)<br>
+               Fever critical (40 ≤ T < 42°C)<br>
+               Fever severe (T ≥ 42°C)<br>
+               Optimum (38.5 ≤ T ≤ 39.5°C)"
+  ) +
+  theme_light(base_size = 16) +
+  theme(plot.caption = element_markdown(hjust = 0, size = 12))
+
+# model_dt_full <- arrow::read_parquet("../data/trial_3Ps_model_df_FULL_Dec24.parquet") |> setDT()
+model_dt_full <- arrow::read_parquet("../data/3PS_trial_2_model_df_FULL_jan24.parquet") |> setDT() 
+setorder(model_dt_full, animal_id, timestamp)
+model_dt_full[, week_age := lubridate::week(date)]
+
+# Define columns used for training
+# train_cols <- 
+#   c("class_sick", "class_normal", "class_watch", "class_optimal", "season", "trend", "remainder", "Temp_Diff_3h", "Temp_Diff_6h", "Temp_Diff_12h", "Temp_Diff_24h", "Temp_Diff_30h", "Temp_Diff_48h", "Temp_Ratio_3h", "Temp_Ratio_6h", "Temp_Ratio_12h", "Temp_Ratio_24h", "Temp_Ratio_30h", "Temp_Ratio_48h", "Lag_Temp_3h", "Lag_Temp_6h", "Lag_Temp_12h", "Lag_Temp_24h", "Lag_Temp_30h", "Lag_Temp_48h", "Rolling_Avg_3h", "Rolling_Avg_6h", "Rolling_Avg_12h", "Rolling_Avg_24h", "Rolling_Avg_30h", "Rolling_Avg_48h", "Rolling_SD_3h", "Rolling_SD_6h", "Rolling_SD_12h", "Rolling_SD_24h", "Rolling_SD_30h", "Rolling_SD_48h", "Rolling_max_3h", "Rolling_max_6h", "Rolling_max_12h", "Rolling_max_24h", "Rolling_max_30h", "Rolling_max_48h", "Rolling_min_3h", "Rolling_min_6h", "Rolling_min_12h", "Rolling_min_24h", "Rolling_min_30h", "Rolling_min_48h", "Rolling_range_3h", "Rolling_range_6h", "Rolling_range_12h", "Rolling_range_24h", "Rolling_range_30h", "Rolling_range_48h")
+
+# Define columns used for training
+train_cols <- 
+  c("week_age", "trend", "Rolling_Avg_24h", "Rolling_Avg_30h", "Rolling_Avg_48h", "Rolling_SD_24h", "Rolling_SD_30h", "Rolling_SD_48h", "Rolling_max_12h", "Rolling_max_24h", "Rolling_max_30h", "Rolling_max_48h", "Rolling_min_24h", "Rolling_min_30h", "Rolling_min_48h", "Rolling_range_24h", "Rolling_range_30h", "Rolling_range_48h")
+
+# Exclude columns with zero variance
+train_cols <- train_cols[sapply(model_dt_full[, ..train_cols], function(col) var(col, na.rm = TRUE) > 0)]
+
+# filter dt only to train cols
+model_dt <- model_dt_full[, ..train_cols][, target := model_dt_full$target]
+
+model_dt_clean <- na.omit(model_dt)
+
+# Simple r part model
+# Set task
+rpart_task <- TaskClassif$new(id = "toy_fit", backend = model_dt, target = "target")
+
+# Split task into train/test
+splits <- partition(rpart_task, ratio = 0.8, stratify = "target")
+
+# define measures to score/evalutate
+eval_metrics <- c(
+  msr("classif.fbeta"),
+  msr("classif.acc"),
+  msr("classif.auc"),
+  msr("classif.recall"),
+  # msr("classif.sensitivity"),
+  # msr("classif.specificity"),
+  msr("classif.fpr"),
+  # msr("classif.fnr"),
+  # msr("classif.tpr"),
+  # msr("classif.tnr"),
+  msr("classif.ce"),
+  msr("classif.precision")
+)
+
+# mlr3::mlr_learners
+rpart_lrn <- mlr3::lrn("classif.rpart", predict_type = "prob")
+resampling <- mlr3::rsmp("repeated_cv", folds = 5, repeats = 10)
+
+# rpart ----
+rr_cv_rpart <- mlr3::resample(task = rpart_task,
+                              learner = rpart_lrn,
+                              resampling = resampling,
+                              store_backends = TRUE)
+
+# evaluate
+eval_cv_rpart <- rr_cv_rpart$score(measure = eval_metrics)
+eval_cv_rpart_mean <- rr_cv_rpart$aggregate(measure = eval_metrics) 
+
+autoplot(rr_cv_rpart, type = "roc") +
+  autoplot(rr_cv_rpart, type = "prc") + 
+  ggtitle("ROC and PRC - rpart")
+
+# Train and check importance
+rpart_lrn$train(rpart_task, splits$train)
+rpart_importance <- rpart_lrn$importance()
+p3 <- plot_var_importance(rpart_importance) + ggtitle("Variable importance - rpart")
+p3
+
+# Which variable was selected?
+rpart_lrn$selected_features()
+
+# Prediction on test
+rpart_prediction <- rpart_lrn$predict(rpart_task, splits$test)
+rpart_prediction$score(measure = eval_metrics) 
+rpart_prediction$confusion
+
+autoplot(rpart_prediction, type = "threshold", measure = msr("classif.fpr")) +
+  autoplot(rpart_prediction, type = "threshold", measure = msr("classif.acc")) + 
+  ggtitle("Threshold check - rpart")
+
+# # xgboost ----
+# xgb_lrn <- mlr3::lrn("classif.xgboost", 
+#                      predict_type = "prob")
+# 
+# 
+# # Resampling
+# rr_cv_xgb <- mlr3::resample(task = rpart_task,
+#                             learner = xgb_lrn,
+#                             resampling = resampling)
+# 
+# # evaluate
+# eval_cv_xgb <- rr_cv_xgb$score(measure = eval_metrics)
+# eval_cv_xgb_mean <- rr_cv_xgb$aggregate(measure = eval_metrics)
+# 
+# plot(density(eval_cv_xgb$classif.fpr))
+# plot(density(eval_cv_xgb$classif.acc))
+# 
+# autoplot(rr_cv_xgb, type = "roc") +
+# autoplot(rr_cv_xgb, type = "prc") + 
+#   ggtitle("ROC and PRC - xgboost")
+# 
+# # Train and check importance
+# xgb_lrn$train(rpart_task, splits$train)
+# xgb_importance <- xgb_lrn$importance()
+# p4 <- plot_var_importance(xgb_importance) + ggtitle("Variable importance - xgboost")
+# 
+# xgb_prediction <- xgb_lrn$predict(rpart_task, splits$test)
+# xgb_prediction$score(measure = eval_metrics) 
+# xgb_prediction$confusion
+# 
+# autoplot(xgb_prediction, type = "threshold", measure = msr("classif.fpr")) +
+# autoplot(xgb_prediction, type = "threshold", measure = msr("classif.acc")) + 
+#   ggtitle("Threshold check - xgboost")
+# 
+# # ranger ----
+# ranger_lrn <- mlr3::lrn("classif.ranger", 
+#                         predict_type = "prob",
+#                         importance = "impurity")
+# 
+# 
+# # Resampling
+# rr_cv_ranger <- mlr3::resample(task = rpart_task,
+#                                learner = ranger_lrn,
+#                                resampling = resampling)
+# 
+# evaluate
+# eval_cv_ranger <- rr_cv_ranger$score(measure = eval_metrics)
+# eval_cv_ranger_mean <- rr_cv_ranger$aggregate(measure = eval_metrics)
+# 
+# plot(density(eval_cv_ranger$classif.fpr))
+# plot(density(eval_cv_ranger$classif.acc))
+# 
+# autoplot(rr_cv_rpart, type = "roc") +
+# autoplot(rr_cv_rpart, type = "prc") +
+#   ggtitle("ROC and PRC - ranger")
+# 
+# # # Train and check importance
+# ranger_lrn$train(rpart_task, splits$train)
+# ranger_importance <- ranger_lrn$importance()
+# p5 <- plot_var_importance(ranger_importance) + ggtitle("Variable importance - Ranger")
+# 
+# ranger_prediction <- ranger_lrn$predict(rpart_task, splits$test)
+# ranger_prediction$score(measure = eval_metrics)
+# ranger_prediction$confusion
+# 
+# autoplot(ranger_prediction, type = "threshold", measure = msr("classif.fpr")) +
+# autoplot(ranger_prediction, type = "threshold", measure = msr("classif.acc")) +
+#   ggtitle("Threshold check - ranger")
+# 
+# # NNET ----
+# nnet_lrn <- mlr3::lrn("classif.nnet",
+#                       predict_type = "prob")
+# 
+# # Resampling
+# rr_cv_nnet <- mlr3::resample(task = rpart_task,
+#                              learner = nnet_lrn,
+#                              resampling = resampling)
+# 
+# # evaluate
+# eval_cv_nnet <- rr_cv_nnet$aggregate(measure = eval_metrics)
+# 
+# plot(density(eval_cv_nnet$classif.fpr))
+# plot(density(eval_cv_nnet$classif.acc))
+# 
+# autoplot(rr_cv_nnet, type = "roc") +
+# autoplot(rr_cv_nnet, type = "prc") +
+#   ggtitle("ROC and PRC - nnet")
+# 
+# # # Train and check importance
+# nnet_lrn$train(rpart_task, splits$train)
+# 
+# nnet_prediction <- nnet_lrn$predict(rpart_task, splits$test)
+# nnet_prediction$score(measure = eval_metrics)
+# nnet_prediction$confusion
+# 
+# autoplot(nnet_prediction, type = "threshold", measure = msr("classif.fpr")) +
+# autoplot(nnet_prediction, type = "threshold", measure = msr("classif.acc")) +
+#   ggtitle("Threshold check - nnet")
+
+```
+
+## Modelling comparison - benchmarking ML approaches
+
+```{r, ML_approaches, echo=TRUE, warning=FALSE, message=FALSE}
+
+# train test split
+sort(unique(model_dt_full$date))
+# split_date <- as.Date("2024-10-25")  # Define split date
+split_date <- as.Date("2024-12-03")
+
+# split by date then select `train_cols`
+# train_data <- model_dt_full[date < split_date]
+train_data <- subset(model_dt_full, date < split_date) |> setDT()
+train_data <- train_data[, ..train_cols][, target := train_data$target]
+train_data <- na.omit(train_data)
+
+# test_data <- model_dt_full[date >= split_date]
+test_data <- subset(model_dt_full, date >= split_date) |> setDT()
+test_data <- test_data[, ..train_cols][, target := test_data$target]
+test_data <- na.omit(test_data)
+
+# Create separate tasks for train and test
+train_task <- TaskClassif$new(id = "train_task", backend = train_data, target = "target")
+test_task <- TaskClassif$new(id = "test_task", backend = test_data, target = "target")
+
+# Define the task
+lrn_xgboost <- lrn("classif.xgboost", predict_type = "prob")
+lrn_rpart <- lrn("classif.rpart", predict_type = "prob")
+lrn_logreg <- lrn("classif.log_reg", predict_type = "prob")
+lrn_glm <- lrn("classif.glmnet", predict_type = "prob")
+lrn_ranger <- lrn("classif.ranger", predict_type = "prob", importance = "impurity")
+
+# Define a list of learners
+learners <- list(lrn_xgboost, lrn_glm, lrn_logreg, lrn_rpart, lrn_ranger)
+
+# Define the resampling method
+# resampling <- rsmp("holdout", ratio = .7)
+resampling_tsk <- mlr3::rsmp("repeated_cv", folds = 5, repeats = 3)
+resampling_tsk$instantiate(train_task)
+
+# Define the evaluation measures
+measures <- msrs(c("classif.fbeta", "classif.fpr", "classif.auc", "classif.acc"))
+
+# Create a benchmark design
+design <- benchmark_grid(
+  tasks = train_task,
+  learners = learners,
+  resamplings = resampling_tsk
+)
+
+# Run the benchmark
+bmr <- benchmark(design)
+bmrdt <- as.data.table(bmr)
+
+# Compare models
+autoplot(bmr, measure = msr("classif.fpr")) +
+  autoplot(bmr, measure = msr("classif.auc")) +
+  autoplot(bmr, measure = msr("classif.acc")) + 
+  autoplot(bmr, measure = msr("classif.fbeta"))
+
+p_roc_prc <- autoplot(bmr, type = "roc") + autoplot(bmr, type = "prc") +
+  plot_layout(guides = "collect")
+p_roc_prc
+
+# Train and generate predictions
+trained_models <- lapply(learners, 
+                         function(learner) train_and_evaluate(learner, train_task, test_task))
+
+# Extract the trained learners and test accuracies
+learners_trained <- lapply(trained_models, `[[`, "learner")
+test_accuracies <- sapply(trained_models, `[[`, "test_accuracy")
+test_preds <- lapply(trained_models, `[[`, "prediction_test")
+
+# Calculate all metrics and confusion matrix
+metrics_list <- lapply(test_preds, calculate_metrics)
+names(metrics_list) <-  sapply(learners, function(learner) learner$id)
+
+confusion_mat_results <- lapply(test_preds, function(x) {x$confusion})
+names(confusion_mat_results) <-  sapply(learners, function(learner) learner$id)
+```
+
+```{r, threshold_plots, echo=FALSE, warning=FALSE, message=FALSE}
+
+plot_threshold_check <- function(pred) {
+  autoplot(pred, type = "threshold", measure = msr("classif.fpr")) +
+    autoplot(pred, type = "threshold", measure = msr("classif.acc")) +
+    ggtitle("Threshold check")
+}
+
+threshold_plots <- lapply(test_preds, plot_threshold_check)
+cowplot::plot_grid(plotlist = threshold_plots, ncol = 1)
+```
+
+```{r, xgb_tuning, echo=TRUE, warning=FALSE, message=FALSE}
+
+# select the multisession backend to use
+future::plan("multisession")
+
+# Set tunning space
+lts_xgb <- lts("classif.xgboost.default")
+
+# Set tuning params
+tnr_random <- tnr("random_search")
+rsmp_holdout <- rsmp("holdout", ratio = 0.8)
+trm_evals <- trm("evals", n_evals = 20)
+msr_f1 <- msr("classif.fbeta")
+
+# Set model params to tune
+lrn_xgb <- lrn("classif.xgboost")
+lrn_xgb$param_set$set_values(.values = lts_xgb$values)
+
+# set threads for parallel compute
+set_threads(lrn_xgb, parallel::detectCores())
+
+# Tuning without nested resampling
+instance <- ti(
+  task = train_task,
+  learner = lrn_xgb,
+  resampling = rsmp_holdout,
+  measures = msr_f1,
+  terminator = trm_evals
+)
+
+# autoplot(instance, type = "performance")
+# autoplot(instance, type = "parallel")
+# autoplot(instance, type = "incumbent")
+# autoplot(instance, type = "pairs")
+
+# Optimise
+tuner <- tnr("random_search", batch_size = 10)
+tuner$optimize(instance)
+
+# Extract metric
+insample <- instance$result_y
+
+# Tuning with nested resampling
+at <- auto_tuner(
+  tuner = tnr_random,
+  learner = lrn_xgb,
+  resampling = rsmp_holdout,
+  measure = msr_f1,
+  terminator = trm_evals
+)
+
+# nested sample
+rsmp_cv5 <- rsmp("repeated_cv", folds = 5, repeats = 3)
+out_of_sample <- resample(train_task, at, rsmp_cv5)
+outsample <- out_of_sample$score(measure = eval_metrics)
+
+# Get the parameters
+best_params <- list(
+  nthread = 6,
+  verbose = 1,
+  early_stopping_set = "none",
+  nrounds = 530,
+  eta = 0.3882343,
+  max_depth = 9,
+  colsample_bytree = 0.5261703,
+  colsample_bylevel = 0.8223902,
+  lambda = 4.977289,
+  # alpha = -2.040999,
+  alpha = 0.6524879,
+  subsample =  0.93331
+)
+
+##################################################################
+# Tuned model
+lrn_xgboost_tuned <- lrn("classif.xgboost", predict_type = "prob")
+lrn_xgboost_tuned$param_set$set_values(.values = best_params)
+
+lrn_xgboost_tuned$train(train_task)
+
+generalisation <- lrn_xgboost_tuned$predict(test_task)$score(measure = eval_metrics)
+# Close parallel multisession
+future::plan(sequential)
+
+autoplot(lrn_xgboost_tuned, type = "prediction", test_task)
+
+# Extract prediction and check metrics
+prediction_tuned <- lrn_xgboost_tuned$predict(test_task)
+lrn_xgboost_tuned$importance()
+plot_var_importance(lrn_xgboost_tuned$importance()) + ggtitle("Variable importance - tuned xgboost")
+
+prediction_tuned$confusion
+autoplot(prediction_tuned, type = "stacked")
+
+# Check thresholds
+autoplot(prediction_tuned, type = "threshold", measure = msr("classif.fbeta")) +
+  autoplot(prediction_tuned, type = "threshold", measure = msr("classif.acc")) + 
+  ggtitle("Threshold check - tuned xgboost")
+
+# Set prob threshold to reduce fpr without penalise acc/auc
+prediction_tuned$set_threshold(0.75)
+
+adjusted_prediction_evals <- prediction_tuned$score(measure = eval_metrics)
+print(adjusted_prediction_evals)
+
+# Recalculate metrics
+print(prediction_tuned$confusion)
+autoplot(prediction_tuned, type = "stacked")
+```
+
+
+
