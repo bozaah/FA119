@@ -1,0 +1,21 @@
+.Rproj.user
+.Rhistory
+.Rdata
+.httr-oauth
+.DS_Store
+.quarto
+
+# Quarto files
+outputs/trial_weaners_files/
+outputs/trial_weaners_cache/
+
+# temp chunked data
+data/trial_data_chunked/
+data/3ps_nursery_room1/*
+data/trial_data_chunked_NR6/
+outputs_3PS_trial_to_XSights/*
+outputs_3PS_trial3/*
+images/*
+
+# model
+outputs/xgboost_tuned_v1.rds
