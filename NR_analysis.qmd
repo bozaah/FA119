@@ -1,0 +1,436 @@
+---
+title: "Nursery analysis"
+author: "DPIRD - RP"
+format: html
+---
+
+```{r setup}
+#| echo: false
+
+# load libs
+library(arrow)
+library(data.table)
+library(dplyr)
+library(ggplot2)
+library(lubridate)
+library(mgcv)
+library(readxl)
+
+# source functions
+source("R/utils.R")
+
+# Get all file names
+all_files <- list.files("data/NR"); all_files
+
+# Grab only ones with average temperature
+temperature_files <- grep("_avgTemp10mins_", all_files, value = T)
+
+# Behaviour index
+behaviour_index_file <- grep("_hourlyActivityIndex_", all_files, value = TRUE)
+
+# Mortality files
+sick_files <- grep("_Sickpen_Mortality.", all_files, value = TRUE)
+
+# Pen and sex metadata
+tag_id_sex_file <- grep("_taggingIds_", all_files, value = TRUE)
+```
+
+
+## Process files and export as parquet for fast(er) I/O
+
+```{r}
+# Read in all temperature files
+tag_temp_df <- rbindlist(
+  lapply(temperature_files, 
+         function(x) fread(paste0("data/NR/", x))
+  )
+)
+
+# Run a few checks
+str(tag_temp_df)
+summary(tag_temp_df)
+
+  # Unique tag
+n_pigs <- length(unique(tag_temp_df$ANIMAL_ID)); n_pigs
+
+# set names
+names(tag_temp_df) <- c("tag_id", "tag_temp", "date_time")
+
+# Add day_night column based on hour column
+tag_temp_df[, hour := as.integer(format(date_time, "%H"))]
+tag_temp_df[, day_night := fifelse(hour >= 18 | hour < 6, 0, fifelse(hour >= 6 | hour < 18, 1, NA_integer_))]
+
+# Set theoretical temperature thresholds
+tag_temp_df[, hypo_crit := fifelse(tag_temp <= 35 & tag_temp > 32, 1, 0)]
+tag_temp_df[, hypo_severe := fifelse(tag_temp <= 32, 1, 0)]
+
+# Fever
+tag_temp_df[, fever_crit := fifelse(tag_temp >= 40 & tag_temp < 42, 1, 0)]
+tag_temp_df[, fever_severe := fifelse(tag_temp >= 42, 1, 0)]
+
+# Optimum
+tag_temp_df[, optimum_temp := fifelse(tag_temp >= 38.5 & tag_temp <= 39.5, 1, 0)]
+
+# Export data as parquet
+arrow::write_parquet(tag_temp_df, "data/processed/batch2_tag_temp.parquet")
+
+# Behaviour index data ----
+# Read in
+index_df <- fread(paste0("data/NR/", behaviour_index_file))
+str(index_df)
+summary(index_df)
+
+names(index_df) <- c("tag_id", "activity", "date_time")
+
+# Add day_night column based on hour column
+index_df[, hour := as.integer(format(date_time, "%H"))]
+index_df[, day_night := fifelse(hour >= 18 | hour < 6, 0, fifelse(hour >= 6 | hour < 18, 1, NA_integer_))]
+
+# Export files as parquet for easier I/O
+arrow::write_parquet(index_df, "data/processed/batch2_behaviour_index.parquet")
+
+# Mortality data ----
+sick_list <- 
+  lapply(sick_files, 
+         function(x) fread(paste0("data/NR/", x))
+  )
+
+sick_df <- 
+  sick_list[[2]] |>
+  dplyr::select(Tag_ID, Sex, `Mortality date`, `Final Activity Value`) |>
+  janitor::clean_names()
+
+sick_df <- sick_df[1:36, ]  
+
+str(sick_df)
+summary(sick_df)
+
+# Manually fix the date for tag #0184
+sick_df[35, ]
+sick_df[35, "mortality_date"] <- "2-Oct"
+
+# Place NA in empty tag_id rows
+sick_df[3, ]$tag_id <- NA
+sick_df[18, ]$tag_id <- NA
+
+# parse dates properly formatted
+dates <- paste0(sick_df$mortality_date, "-2024")
+dates <- lubridate::parse_date_time(dates, "dmy", tz = "Australia/Perth")
+sick_df$mortality_date <- dates
+
+sick_df <-
+  dplyr::filter(sick_df, !is.na(tag_id))
+
+# Export to processed dir
+arrow::write_parquet(sick_df, "data/processed/batch2_sick_record.parquet")
+
+# Pen data ----
+# Get a list of all the worksheet names
+sheet_names <- readxl::excel_sheets(file.path("data/NR", tag_id_sex_file))
+
+# Loop through each worksheet
+pen_data_list <- list()
+
+counter <- 1
+for (sheet in sheet_names) {
+  # Read the worksheet into a data.table
+  
+  dt <- 
+    as.data.table(
+      read_xlsx(file.path("data/NR", tag_id_sex_file), 
+                sheet = sheet)
+      ) 
+  
+  dt <- janitor::clean_names(dt)
+
+  dt$tag_id <- 
+    substring(dt[["xiot_tag_id"]], nchar(dt[["xiot_tag_id"]]) - 3, nchar(dt[["xiot_tag_id"]])) 
+  
+  pen_data_list[[counter]] <- dt
+  counter <- counter + 1
+}
+
+pen_data_list[[22]]$pen_number <- 22
+
+names(pen_data_list[[23]])[1] <- "pen_number"
+names(pen_data_list[[24]])[1] <- "pen_number"
+
+# Select the pen#, tag_id and gender columns
+pen_data_df_clean <- 
+  lapply(
+    pen_data_list,
+    extract_data_from_pen_data
+  ) |>
+  rbindlist() |>
+  dplyr::mutate(tag_id = factor(tag_id),
+                gender = factor(fifelse(gender == "M", 0, 1, NA)),
+                pen_number = factor(pen_number))
+
+# Export to processed dir
+arrow::write_parquet(pen_data_df_clean, "data/processed/batch2_pen_gender_ids.parquet")
+
+```
+
+## Nursery data
+
+We are importing the pre-processed data for the pigs in the **nursery pen 2**. These files are the tag temperature measurements aggregated every 10 min over a 24h period. The period is then split into day (6am to 6pm) and night (6pm to 6 am). (NOTE check times). There are `r length(list.files("data/NR"))` files, one for each week of the **batch 2** collection (eg *`r list.files("data/NR")[1]`*). 
+
+```{r check_data_eda}
+
+# Load datasets
+tag_temp_df <- arrow::read_parquet("data/processed/batch2_tag_temp.parquet")
+behaviour_idx_df <- arrow::read_parquet("data/processed/batch2_behaviour_index.parquet")
+sick_df <- arrow::read_parquet("data/processed/batch2_sick_record.parquet")
+pen_gender_df <- arrow::read_parquet("data/processed/batch2_pen_gender_ids.parquet")
+
+# Match sick with pen data
+sick_complete_df <- 
+  sick_df |>
+  left_join(pen_gender_df, by = "tag_id")
+
+sick_complete_df$sex <- NULL
+names(sick_complete_df)[4] <- "sex"
+
+# Check observations for each tag (10 mins over time period - if complete x obs)
+# Temperature data
+obs_counts_temp <- 
+  tag_temp_df |> 
+  dplyr::mutate(tag_id = factor(tag_id)) |>
+  group_by(tag_id) |>
+  count() |>
+  arrange(-n)
+
+hist(obs_counts_temp$n)
+max(obs_counts_temp$n) # 3994
+
+# Match temp counts with pen metadata
+tag_temp_metadata_df <- 
+  obs_counts_temp |>
+  left_join(pen_gender_df, by = "tag_id")
+
+# 
+obs_counts_idx <- 
+  behaviour_idx_df |> 
+  dplyr::mutate(tag_id = factor(tag_id)) |>
+  group_by(tag_id) |>
+  count() |>
+  arrange(-n)
+
+max(obs_counts_idx$n) # 613
+hist(obs_counts_idx$n)
+
+# Match temp counts with pen metadata
+tag_idx_metadata_df <- 
+  obs_counts_idx |>
+  left_join(pen_gender_df, by = "tag_id")
+
+# Check for outliers or obvious errors
+# Get tag_id with missing observations
+obs_counts_temp[which(obs_counts_temp$n < 2000), ] |> arrange(n)
+
+# Only tags FF78, 9CB5, 029C, FEDC seem to have issues (perhaps tags of dead pigs?)
+#  1 FF78       4
+#  2 9CB5      23
+#  3 029C      71
+#  4 FEDC     120
+#  5 02C4     140
+#  6 004B     140
+#  7 0017     141
+#  8 0111     141
+#  9 01B0     141
+# 10 0268     141
+
+tags_with_missing_obs <- 
+  filter(obs_counts_temp, n < 2000) |>
+  dplyr::pull(tag_id) |>
+  as.character()
+  
+# FF78 (only 4 obs, removed)
+filter(new_df, tag_id == "FF78")
+
+# 9CB5 (only 23 obs, removed), they seem extreme, and measurements missing:
+# between 1:30 and 2:40 am then from 4:10 to 8:10 am (last obs)
+filter(new_df, tag_id == "9CB5")
+
+# 029C (71 obs, removed) they seem extreme, and measurements missing mostly 
+# during the morning/day and a gaps overnight, has a 200°C observation
+filter(new_df, tag_id == "029C")
+
+# FEDC (FEDC obs, no clear issues, only missing a obs at the end)
+filter(new_df, tag_id == "FEDC")
+
+# check with a plot
+# add some of the tags with full obs
+df_missing_obs <- 
+  filter(tag_temp_df, tag_id %in% tags_with_missing_obs) |> #c("FF78", "9CB5", "029C", "FEDC", "0000", "0003", "0002", "0004", "0005", "0007")) |>
+  group_by(tag_id) |>
+  arrange(date_time) |>
+  ungroup() |>
+  setDT() |>
+  dplyr::mutate(tag_id = factor(tag_id))
+
+p1_missing_tag_obs <-
+  ggplot(df_missing_obs, aes(x = date_time, y = tag_temp), group = tag_id) +
+  geom_line(aes(colour = tag_id), linewidth = 1.6, alpha = .8) +
+  # scale_color_manual(values = c(rep("grey", 6), "firebrick", "orange", rep("firebrick", 2))) +
+  scale_x_datetime() +
+  scale_y_continuous(limits = c(15, 60), breaks = seq(25, 50, 5)) +
+  theme_minimal(base_size = 16)
+
+
+# Filter out tags with issues
+eda_df <- 
+  new_df |>
+  filter(tag_id %notin% c("FF78", "9CB5", "029C"))
+
+eda_df[, condition := fifelse(fever_crit == 1 | hypo_crit, "alert", 
+                              fifelse(fever_severe == 1 | hypo_severe == 1, "sick",
+                                      fifelse(optimum_temp == 1, "optimal", "normal")))]
+
+eda_df <-
+  eda_df |> mutate(condition = factor(condition),
+                   day_night = factor(day_night))
+
+tags <- unique(levels(eda_df$tag_id))
+
+ggplot(subset(eda_df, tag_id == c("FF9E", "01CD", "DF4A")), 
+       aes(x = dates, y = tag_temp, group = tag_id, colour = tag_id)) +
+  geom_line(linewidth = 1.2, alpha = .8) +
+  scale_x_datetime() +
+  scale_y_continuous(limits = c(15, 55), breaks = seq(15, 55, 5)) +
+  # facet_wrap(. ~ day_night) +
+  theme_minimal(base_size = 16)
+
+
+
+
+x <- get_temperature_stats(eda_df, group = "all")
+stats_by_tag <- get_temperature_stats(eda_df, group = "tag_id")
+
+# Set theoretical temperature thresholds
+stats_by_tag <- setDT(stats_by_tag)
+
+stats_by_tag[, hypo_crit := fifelse(avg <= 35 & avg > 32, 1, 0)]
+stats_by_tag[, hypo_severe := fifelse(avg <= 32, 1, 0)]
+
+# Fever
+stats_by_tag[, fever_crit := fifelse(avg >= 40 & avg < 42, 1, 0)]
+stats_by_tag[, fever_severe := fifelse(avg >= 42, 1, 0)]
+
+# Optimum
+stats_by_tag[, optimum_temp := fifelse(avg >= 38.5 & avg <= 39.5, 1, 0)]
+
+stats_by_tag[, condition := fifelse(fever_crit == 1 | hypo_crit, "alert", 
+                                    fifelse(fever_severe == 1 | hypo_severe == 1, "sick",
+                                            fifelse(optimum_temp == 1, "optimal", "normal")))]
+
+
+t <- subset(stats_by_tag, sd < 2)
+
+stats_by_tag[, threshold := (avg + (0.5 * sd))]
+
+test_df <-
+  eda_df |>
+  filter(tag_id %in% my_df$tag_id)
+  # filter(tag_id %in% c(sample(tags, 10, replace = F)))
+
+ggplot(test_df, aes(x = tag_temp)) + 
+  geom_density() +
+  facet_wrap(. ~ day_night) +
+  theme_minimal()
+
+ggplot(t, aes(x = tag_id, y = avg, group = day_night, fill = day_night)) +
+  geom_col(alpha = .8) +
+  scale_color_viridis_d() +
+  # scale_x_datetime() +
+  # scale_y_continuous(limits = c(15, 60), breaks = seq(25, 50, 5)) +
+  facet_wrap(. ~ day_night) +
+  theme_minimal(base_size = 16)
+
+
+
+
+
+eda_df <- 
+  new_df |> 
+  group_by(tag_id) |>
+  mutate(obs_count = n()) |>
+  ungroup()
+
+filter(eda_df, obs_count < 144) |>
+  group_by(tag_id) |>
+  distinct()
+
+ggplot(new_df, aes(x = dates, y = tag_temp), group = day_night) + 
+  geom_point() + 
+  scale_x_datetime() + 
+  theme_minimal() 
+
+filter(new_df, tag_temp > 47)
+
+# If `tag_temp` over critical threshold: alert
+# If `tag_temp` over severe threshold (<32 or >40): sick
+
+new_df[, condition := fifelse(fever_crit == 1 | hypo_crit, "alert", 
+                              fifelse(fever_severe == 1 | hypo_severe == 1, "sick",
+                                      fifelse(optimum_temp == 1, "optimal", "normal")))]
+
+str(new_df)
+
+# new_df |>
+#   dplyr::mutate(condition2 = factor(condition2)) |>
+#   dplyr::group_by(day_night, condition2) |>
+#   dplyr::reframe(avg_temp = mean(tag_temp, na.rm = T))
+# 
+# 
+# new_df[, condition2 := ifelse((hypo_severe + fever_severe) == 2, "sick", 
+#                               fifelse((hypo_severe + fever_severe) == 1, "alert", "normal"))]
+# 
+# 
+# x <- group_split(new_df |> group_by(day_night))
+# 
+# x[[1]] |>
+#   group_by(tag_id) 
+# 
+# 
+# # How many records for each pig this week
+# record_counts <- new_df[, .(RecordCount = .N), by = tag_id]; record_counts
+# meanT <- new_df[, .(temp_avg = mean(tag_temp)), by = tag_id]
+# mean_sd <- new_df[, .(temp_sd = sd(tag_temp)), by = tag_id]
+# 
+# 
+# x <- merge(record_counts, meanT)
+# x <- merge(x, mean_sd)
+# 
+# custom_temp_up <- function(avg, sd) {return(avg + (0.5 * sd))}
+# custom_temp_down <- function(avg, sd) {return(avg - (0.5 * sd))}
+# 
+# 
+# # Get data for one pig
+# pig_FFFD <- subset(new_df, tag_id == "0000")
+# pig_FFFD$rolling_avg <- zoo::rollmean(pig_FFFD$tag_temp, 6, fill = NA)
+# pig_FFFD$rolling_sd <- zoo::rollapply(pig_FFFD$tag_temp, 6, fill = NA, "sd")
+# 
+# 
+# 
+# pig_FFFD |>
+#   ggplot(aes(x = dates, y = tag_temp)) +
+#   geom_line(alpha = .6) +
+#   geom_line(aes(x = dates, y = rolling_avg), colour = "firebrick") +
+#   # scale_y_continuous(limits = c(28, 42)) +
+#   scale_x_datetime(date_breaks = "3 hours") +
+#   theme_minimal()
+# 
+# 
+# fit <- lm(tag_temp ~ as.character(tag_int), data = new_df)
+# fit
+# summary(fit)
+# plot(fit)
+# 
+# lapply(coefs, add_num, intercept)
+
+
+
+
+
+```
