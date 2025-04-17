@@ -415,7 +415,7 @@ plot_var_importance <- function(importance,
   importance_dt <- importance_dt[order(-importance)][1:top_n]
   
   # Create the ggplot
-  ggplot(importance_dt, aes(x = reorder(variable, importance), y = importance)) +
+  ggplot(na.omit(importance_dt), aes(x = reorder(variable, importance), y = importance)) +
     geom_bar(stat = "identity", fill = "grey70", alpha = 0.7) +
     scale_fill_viridis_d(option = "D", name = "") +
     coord_flip() +
@@ -424,7 +424,7 @@ plot_var_importance <- function(importance,
       x = "Features\n",
       y = "\nImportance"
     ) +
-    theme_light(base_size = 16) 
+    theme_light(base_size = 18) 
 }
 
 #' Train and evaluate machine learning models (mlr3)
@@ -606,7 +606,7 @@ create_status_summary_plot <- function(csv_file_path,
               aes(label = paste("Total:", total_count), x = 1.5, y = Inf),
               hjust = 0.5, vjust = 1.1, size = 4, color = "black", inherit.aes = FALSE) +
     
-    scale_y_continuous(limits = c(0, max(date_summary$total_count) * 1.1),
+    scale_y_continuous(limits = c(0, max(status_summary_dt[final_status == "sick", Count]) * 1.1),
                        breaks = function(limits) seq(0, limits[2], by = ifelse(limits[2] > 20, 20, 10))) +
     
     

@@ -23,6 +23,7 @@ is_empty <- function(x) {
 
 # List .parquet files in the directory
 parquet_files <- list.files("outputs_3PS_trial3", pattern = "\\.parquet$", full.names = TRUE)
+parquet_files <- grep("grower", parquet_files, value = TRUE)
 
 if (length(parquet_files) > 0) {
   # Get file information for each file
@@ -47,15 +48,15 @@ if (length(parquet_files) > 0) {
     
     # Source new data
     # 1. Construct the argument vector as you would on the command line
-    args <- c("../../../../Desktop/Workbench/Code/3Ps_snowflake/source_data_last_48h_3PS_trial3.py", 
-              "--start_datetime=2025-03-01 00:00:00",
-              "--end_datetime=2025-03-13 08:00:00")
+    args <- c("../../../../Desktop/Workbench/Code/3Ps_snowflake/source_data_3PS_grower.py", 
+              "--start_datetime=2025-03-25 00:00:00",
+              "--end_datetime=2025-04-04 08:00:00")
     
     # 2. Assign that vector to sys.argv within Python
     sys <- import("sys")
     sys$argv <- args
     
-    py_run_file("../../../../Desktop/Workbench/Code/3Ps_snowflake/source_data_last_48h_3PS_trial3.py")
+    py_run_file("../../../../Desktop/Workbench/Code/3Ps_snowflake/source_data_3PS_grower.py")
     
   } else {
     stop("There is an error with the temperature data download", call. = F)
@@ -70,15 +71,15 @@ if (length(parquet_files) > 0) {
   
   # Source new data
   # 1. Construct the argument vector as you would on the command line
-  args <- c("../../../../Desktop/Workbench/Code/3Ps_snowflake/source_data_last_48h_3PS_trial3.py", 
-            "--start_datetime=2025-02-10 00:00:00",
-            "--end_datetime=2025-02-13 08:00:00")
+  args <- c("../../../../Desktop/Workbench/Code/3Ps_snowflake/source_data_3PS_grower.py", 
+            "--start_datetime=2025-03-12 00:00:00",
+            "--end_datetime=2025-04-02 08:00:00")
   
   # 2. Assign that vector to sys.argv within Python
   sys <- import("sys")
   sys$argv <- args
   
-  py_run_file("../../../../Desktop/Workbench/Code/3Ps_snowflake/source_data_last_48h_3PS_trial3.py")
+  py_run_file("../../../../Desktop/Workbench/Code/3Ps_snowflake/source_data_3PS_grower.py")
   
 } else {
   stop("\nThere is an error with the temperature data download or loading\n", call. = F)
@@ -90,6 +91,7 @@ source("R/utils.R")
 # List files
 message("\nLoad and manipulate data\n")
 parquet_files <- list.files("outputs_3PS_trial3", pattern = "\\.parquet$", full.names = TRUE)
+parquet_files <- grep("grower", parquet_files, value = TRUE)
 parquet_files <- sort(parquet_files)
 dt <- arrow::read_parquet(parquet_files[length(parquet_files)]) |> setDT()
 
@@ -105,7 +107,7 @@ setorder(dt, timestamp_awst, animal_id)
 
 # Check counts of observations for ts
 obs_counts <- dt[, .N, by = animal_id]
-to_remove_idx <- which(obs_counts$N < 144) 
+to_remove_idx <- which(obs_counts$N < 144*2) 
 to_remove_tag <- obs_counts[to_remove_idx, animal_id] 
 
 # remove tags with unsif
@@ -239,7 +241,10 @@ model_dt_clean[1, target := factor(1)]
 message("\nFinished model data manipulation\n")
 
 # Load model
-inference_model <- readRDS("outputs/ensemble_trained_on_trial2.rds")
+# model_dt_clean <- arrow::read_parquet("../../../../Downloads/grower_3PS_test.parquet") |> setDT()
+# model_dt <- arrow::read_parquet("../../../../Downloads/grower_3PS_test_full.parquet")  |> setDT()
+
+inference_model <- readRDS("outputs/ensemble_trained_on_trial2_v3.rds")
 
 message("\nML model successfully loaded.\n")
 
@@ -275,23 +280,23 @@ daily_status_detailed <-
   ]
 
 x <- daily_status_detailed[,
-  .(
-    final_status = factor(
-      ifelse(
-        # Condition 1
-        mean(mean_prob >= 0.5) > 0.5 & mean(sd_prob <= 0.1),
-        "sick",
-        ifelse(
-          # Condition 2
-          mean(mean_prob >= 0.5) > 0.5 & mean(sd_prob > 0.1),
-          "alert",
-          "ok"
-        )
-      ),
-      levels = c("ok", "alert", "sick")  # optional, for consistent factor levels
-    )
-  ),
-  by = .(animal_id, date = as.Date(date))
+                           .(
+                             final_status = factor(
+                               ifelse(
+                                 # Condition 1
+                                 mean(mean_prob >= 0.5) > 0.5 & mean(sd_prob <= 0.1),
+                                 "sick",
+                                 ifelse(
+                                   # Condition 2
+                                   mean(mean_prob >= 0.5) > 0.5 & mean(sd_prob > 0.1),
+                                   "alert",
+                                   "ok"
+                                 )
+                               ),
+                               levels = c("ok", "alert", "sick")  # optional, for consistent factor levels
+                             )
+                           ),
+                           by = .(animal_id, date = as.Date(date))
 ]
 
 # data to export
@@ -391,7 +396,7 @@ setcolorder(out_status, c("animal_id", "dmac", "date"))
 
 # Return only up to the complete record for the day
 # out_status <- subset(out_status, date == Sys.Date())
-out_status_day <- subset(out_status, date == max(date-1, na.rm = T))
+out_status_day <- subset(out_status, date == max(date-2, na.rm = T))
 
 # Export results
 timestamp_export <- format(Sys.time(), "%d-%b-%y-%X")
