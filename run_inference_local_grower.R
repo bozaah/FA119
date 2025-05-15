@@ -49,8 +49,8 @@ if (length(parquet_files) > 0) {
     # Source new data
     # 1. Construct the argument vector as you would on the command line
     args <- c("../../../../Desktop/Workbench/Code/3Ps_snowflake/source_data_3PS_grower.py", 
-              "--start_datetime=2025-03-25 00:00:00",
-              "--end_datetime=2025-04-04 08:00:00")
+              "--start_datetime=2025-04-01 00:00:00",
+              "--end_datetime=2025-04-11 08:00:00")
     
     # 2. Assign that vector to sys.argv within Python
     sys <- import("sys")
@@ -107,7 +107,7 @@ setorder(dt, timestamp_awst, animal_id)
 
 # Check counts of observations for ts
 obs_counts <- dt[, .N, by = animal_id]
-to_remove_idx <- which(obs_counts$N < 144*2) 
+to_remove_idx <- which(obs_counts$N < 14) 
 to_remove_tag <- obs_counts[to_remove_idx, animal_id] 
 
 # remove tags with unsif
@@ -258,9 +258,8 @@ task_inference <- TaskClassif$new(
 
 # Run inference **without creating a task**
 message("\nGet model predictions\n")
-predictions <- inference_model$predict(task_inference)$classif.rpart.output
+predictions <- inference_model$predict(task_inference)$classif.rpart.output# Add predictions to dataset
 
-# Add predictions to dataset
 model_dt[, prediction_prob := predictions$prob[, 1]]  # Assuming column 2 is "sick" probability
 model_dt[, prediction_class := predictions$response]
 model_dt[, date := lubridate::as_date(timestamp_awst)]
@@ -271,6 +270,7 @@ daily_status_detailed <-
   model_dt[,
            .(
              total_obs = .N,
+             prop_total_obs = .N / 144,
              prop_sick = round(mean(prediction_class == "1"), 3),
              mean_prob = round(mean(prediction_prob), 3),
              sd_prob = round(sd(prediction_prob), 3),
@@ -279,7 +279,7 @@ daily_status_detailed <-
            by = .(animal_id, date)
   ]
 
-x <- daily_status_detailed[,
+x <- daily_status_detailed[,#prop_sick > 0.5,
                            .(
                              final_status = factor(
                                ifelse(
@@ -396,7 +396,7 @@ setcolorder(out_status, c("animal_id", "dmac", "date"))
 
 # Return only up to the complete record for the day
 # out_status <- subset(out_status, date == Sys.Date())
-out_status_day <- subset(out_status, date == max(date-2, na.rm = T))
+out_status_day <- subset(out_status, date == max(date-1, na.rm = T))
 
 # Export results
 timestamp_export <- format(Sys.time(), "%d-%b-%y-%X")
@@ -404,7 +404,7 @@ timestamp_export <- format(Sys.time(), "%d-%b-%y-%X")
 # Export raw summary (all obs)
 data.table::fwrite(out_status, 
                    paste0("outputs_3PS_trial_to_XSights/",
-                          "3PS_ML_health_status_NR6_", 
+                          "3PS_ML_health_status_GB6_", 
                           timestamp_export,
                           ".csv")
 )
@@ -413,7 +413,7 @@ data.table::fwrite(out_status,
 # Export only sick and alert labels
 data.table::fwrite(subset(out_status_day, final_status %notin% c("ok")), 
                    paste0("outputs_3PS_trial_to_XSights/",
-                          "3PS_ML_health_status_NR6_", 
+                          "3PS_ML_health_status_GB6_", 
                           timestamp_export,
                           "_sick_only.csv")
 )
@@ -421,7 +421,7 @@ data.table::fwrite(subset(out_status_day, final_status %notin% c("ok")),
 # Export model dataset and predictions (prob and class)
 arrow::write_parquet(model_dt, 
                      paste0("outputs_3PS_trial_to_XSights/",
-                            "3PS_ML_inference_data_NR6_", 
+                            "3PS_ML_inference_data_GB66_", 
                             timestamp_export,
                             ".parquet"))
 
