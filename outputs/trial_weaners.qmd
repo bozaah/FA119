@@ -221,27 +221,28 @@ original_par <- par()
 # Adjust margins to create space for the legend outside the plotting area
 par(mar = c(5, 4, 4, 8)) # Increase the right margin to accommodate the legend
 
-with(subset(features_dt, animal_id == "FFDB460D9AD5" & doy %in% c(278:290)),
+with(subset(features_dt, animal_id == "FFFB4759B2C2" & doy %in% c(278:290)),
      plot(temperature ~ timestamp, type = "l", col = "grey", lwd = 1.6, xlab = "", ylab = "\nTag temperature (ºC)"))
-with(subset(features_dt, animal_id == "FFDB460D9AD5" & doy %in% c(278:290)),
+with(subset(features_dt, animal_id == "FFFB4759B2C2" & doy %in% c(278:290)),
      lines(Rolling_Avg_3h ~ timestamp, col = "orange", lwd = 4))
-with(subset(features_dt, animal_id == "FFDB460D9AD5" & doy %in% c(278:290)),
-     lines(Rolling_Avg_6h ~ timestamp, col = "forestgreen", lwd = 4))
-with(subset(features_dt, animal_id == "FFDB460D9AD5" & doy %in% c(278:290)),
+# with(subset(features_dt, animal_id == "D0C28D4DE6A1" & doy %in% c(278:290)),
+#      lines(Rolling_Avg_6h ~ timestamp, col = "forestgreen", lwd = 4))
+with(subset(features_dt, animal_id == "FFFB4759B2C2" & doy %in% c(278:290)),
      lines(Rolling_Avg_12h ~ timestamp, col = "darkblue", lwd = 4))
-with(subset(features_dt, animal_id == "FFDB460D9AD5" & doy %in% c(278:290)),
-     lines(Rolling_Avg_24h ~ timestamp, col = "steelblue", lwd = 4))
-with(subset(features_dt, animal_id == "FFDB460D9AD5" & doy %in% c(278:290)),
+# with(subset(features_dt, animal_id == "D0C28D4DE6A1" & doy %in% c(278:290)),
+#      lines(Rolling_Avg_24h ~ timestamp, col = "steelblue", lwd = 4))
+with(subset(features_dt, animal_id == "FFFB4759B2C2" & doy %in% c(278:290)),
      lines(Rolling_Avg_30h ~ timestamp, col = "purple2", lwd = 4))
-with(subset(features_dt, animal_id == "FFDB460D9AD5" & doy %in% c(278:290)),
+with(subset(features_dt, animal_id == "FFFB4759B2C2" & doy %in% c(278:290)),
      lines(Rolling_Avg_48h ~ timestamp, col = "firebrick", lwd = 4))
-title("Ear tag temperature (dmac 9AD5)")
+title("Ear tag temperature (dmac B2C2)")
 
 # Add the legend outside the plot
-legend("topright", inset = c(-0.2, 0), legend = c("Obs", "3h", "6h", "12h", "24h", "30h", "48h"),
-       col = c("grey", "orange", "forestgreen", "darkblue", "steelblue", "purple2", "firebrick"), 
+legend("topright", inset = c(-0.2, 0), legend = c("Obs", "3h","12h", "30h", "48h"),
+       col = c("grey", "orange", "darkblue", "purple2", "firebrick"), 
        lwd = rep(4, 7), xpd = TRUE, title = "Rolling mean")
 
+# "forestgreen""steelblue","6h","24h",
 # Restore original par settings
 par(original_par)
 
@@ -311,6 +312,7 @@ ggplot(results_ts_features, aes(x = trend), group = anomaly) +
   theme_light(base_size = 16) +
   labs(title = "10-min Temperature Pattern ", y = "Density", x = "TS Trend")
 
+options(arrow.unsafe_metadata = TRUE)
 # arrow::write_parquet(results_ts_features, "data/trial_3Ps_timeseries_anomaly_features_data.parquet")
 
 ```
@@ -339,12 +341,37 @@ str(clean_dt)
 
 # Remove tags labelled dead
 clean_dt <- subset(clean_dt, condition %in% c("Healthy", "Sick"))
-clean_dt[, target := ifelse(condition == "Healthy", 0, 1)]
+clean_dt[, target := condition]
+# clean_dt[, target := ifelse(condition == "Healthy", 0, 1)]
 
-ggplot(clean_dt, aes(x = season)) +
+ggplot(clean_dt, aes(x = Rolling_min_48h)) +
   geom_density(aes(fill = factor(target)), alpha = .7) +
+  labs(title = "Rolling min 48h temperature distribution", 
+       subtitle = "Batch 2 - weaner room",
+       y = "Density\n", 
+       x = "\nEar tag temperature (°C)") +
   scale_fill_viridis_d(option = "D", name = "Condition") +
   theme_light(base_size = 16)
+
+ggplot(clean_dt, aes(x = Rolling_max_48h)) +
+  geom_density(aes(fill = factor(target)), alpha = .7) +
+  labs(title = "Rolling max 48h temperature distribution", 
+       subtitle = "Batch 2 - weaner room",
+       y = "Density\n", 
+       x = "\nEar tag temperature (°C)") +
+  scale_fill_viridis_d(option = "D", name = "Condition") +
+  theme_light(base_size = 16)
+
+ggplot(clean_dt, aes(x = Rolling_range_48h)) +
+  geom_density(aes(fill = factor(target)), alpha = .7) +
+  labs(title = "Rolling range 48h temperature distribution", 
+       subtitle = "Batch 2 - weaner room",
+       y = "Density\n", 
+       x = "\nEar tag temperature (°C)") +
+  scale_fill_viridis_d(option = "D", name = "Condition") +
+  theme_light(base_size = 16)
+
+arrow::write_parquet(clean_dt, here::here("data/trial_3Ps_batch2_cleaned_data.parquet"))
 
 # Check stats for each animal
 animal_id_summary <- calculate_stats_combined(clean_dt, "observed", "animal_id")
